@@ -1,4 +1,4 @@
-use leptos::html::{div, h1, main};
+use leptos::html::{main};
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, TitleProps};
 use leptos_router::components::{RouteProps, RouterProps, RoutesProps};
@@ -7,6 +7,8 @@ use leptos_router::{
     StaticSegment, WildcardSegment,
 };
 use crate::layout::navbar::NavBar;
+use crate::pages::home_page::HomePage;
+use crate::pages::not_found::NotFound;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -70,36 +72,8 @@ pub fn App() -> impl IntoView {
     ))
 }
 
-/// Renders the home page of your application.
-#[component]
-fn HomePage() -> impl IntoView {
-    let lang = use_context::<ReadSignal<String>>().expect("no lang specified");
-    div().child((
-        { h1().child("Hello Emu! Welcome to the Home Page!") },
-        { "Preferred Lang: " },
-        { move || lang.get().to_string() },
-    ))
-}
-
 /// 404 - Not Found
-#[component]
-fn NotFound() -> impl IntoView {
-    // set an HTTP status code 404
-    // this is feature gated because it can only be done during
-    // initial server-side rendering
-    // if you navigate to the 404 page subsequently, the status
-    // code will not be set because there is not a new HTTP request
-    // to the server
-    #[cfg(feature = "ssr")]
-    {
-        // this can be done inline because it's synchronous
-        // if it were async, we'd use a server function
-        let resp = expect_context::<leptos_actix::ResponseOptions>();
-        resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
-    }
 
-    h1().child("Not Found")
-}
 
 pub fn get_lang_from_browser() -> Option<String> {
     let window = web_sys::window().expect("no global `window` exists");
