@@ -10,17 +10,27 @@ crate-type = ["cdylib", "rlib"]
 actix-files = { version = "0.6", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
 console_error_panic_hook = "0.1"
-http = { version = "1.3.1", optional = true }
 leptos = { version = "0.8.2" }
 leptos_meta = { version = "0.8.2" }
 leptos_actix = { version = "0.8.2", optional = true }
 leptos_router = { version = "0.8.2" }
 wasm-bindgen = "=0.2.105"
 web-sys = { version = "0.3.82", features = ["Window", "Navigator", "Storage", "HtmlSelectElement"] }
+leptos_i18n = "0.6.0-rc.2"
+
+[build-dependencies]
+leptos_i18n_build = "0.6.0-rc.2"
 
 [features]
-csr = ["leptos/csr"]
-hydrate = ["leptos/hydrate"]
+csr = [
+  "leptos/csr",
+  "leptos_i18n/csr"
+]
+hydrate = [
+  "leptos/hydrate",
+  "leptos_i18n/hydrate",
+  "leptos_i18n_build/hydrate",
+]
 ssr = [
   "dep:actix-files",
   "dep:actix-web",
@@ -28,6 +38,8 @@ ssr = [
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",
+  "leptos_i18n/actix",
+  "leptos_i18n_build/ssr",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode
@@ -90,3 +102,7 @@ lib-default-features = false
 #
 # Optional. Defaults to "release".
 lib-profile-release = "wasm-release"
+
+[package.metadata.leptos-i18n]
+default = "en"
+locales = ["en", "de"]

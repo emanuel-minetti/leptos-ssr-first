@@ -1,8 +1,11 @@
+use crate::i18n::{use_i18n, Locale};
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::pages::home_page::HomePage;
 use crate::pages::not_found::NotFound;
 use leptos::html::main;
 use leptos::prelude::*;
+use leptos_i18n::context::{init_i18n_context_with_options, I18nContextOptions};
+use leptos_i18n::I18nContext;
 use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, TitleProps};
 use leptos_router::components::{RouteProps, RouterProps, RoutesProps};
 use leptos_router::{
@@ -12,17 +15,31 @@ use leptos_router::{
 
 #[component]
 pub fn App() -> impl IntoView {
+    let i18n: I18nContext<Locale, _> = init_i18n_context_with_options(I18nContextOptions {
+        enable_cookie: true,
+        cookie_name: Default::default(),
+        cookie_options: Default::default(),
+        ssr_lang_header_getter: Default::default(),
+    });
+    provide_context(i18n);
+    let i18n_signal = use_i18n();
+    i18n_signal.set_locale(Locale::en);
+
     let (lang, set_lang) = signal("en".to_string());
     Effect::new(move |_| {
         let browser_lang = get_lang_from_browser();
         if browser_lang.is_some() {
             let browser_lang = browser_lang.unwrap();
+            let i18n = use_i18n();
             if browser_lang == "de".to_string() {
                 set_lang.set(browser_lang);
+                i18n.set_locale(Locale::de);
+            } else {
+                set_lang.set("en".to_string());
+                i18n.set_locale(Locale::en);
             }
         }
     });
-
     provide_context(lang);
 
     // Provides context that manages stylesheets, titles, meta tags, etc.
