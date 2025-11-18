@@ -16,7 +16,7 @@ leptos_meta = { version = "0.8.2" }
 leptos_actix = { version = "0.8.2", optional = true }
 leptos_router = { version = "0.8.2" }
 wasm-bindgen = "=0.2.105"
-web-sys = { version = "0.3.82", features = ["Window", "Navigator", "Storage"] }
+web-sys = { version = "0.3.82", features = ["Window", "Navigator", "Storage", "HtmlSelectElement"] }
 
 [features]
 csr = ["leptos/csr"]

@@ -1,4 +1,4 @@
-use crate::layout::navbar::NavBar;
+use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::pages::home_page::HomePage;
 use crate::pages::not_found::NotFound;
 use leptos::html::main;
@@ -39,33 +39,36 @@ pub fn App() -> impl IntoView {
         Router(
             RouterProps::builder()
                 .children(ToChildren::to_children(move || {
-                    ({ NavBar() }, {
-                        main().child(Routes(
-                            RoutesProps::builder()
-                                .fallback(move || "Not Found")
-                                .children(ToChildren::to_children(move || {
-                                    (
-                                        {
-                                            Route(
-                                                RouteProps::builder()
-                                                    .path(StaticSegment(""))
-                                                    .view(HomePage)
-                                                    .build(),
-                                            )
-                                        },
-                                        {
-                                            Route(
-                                                RouteProps::builder()
-                                                    .path(WildcardSegment("any"))
-                                                    .view(NotFound)
-                                                    .build(),
-                                            )
-                                        },
-                                    )
-                                }))
-                                .build(),
-                        ))
-                    })
+                    (
+                        { NavBar(NavBarProps::builder().lang_setter(set_lang).build()) },
+                        {
+                            main().child(Routes(
+                                RoutesProps::builder()
+                                    .fallback(move || "Not Found")
+                                    .children(ToChildren::to_children(move || {
+                                        (
+                                            {
+                                                Route(
+                                                    RouteProps::builder()
+                                                        .path(StaticSegment(""))
+                                                        .view(HomePage)
+                                                        .build(),
+                                                )
+                                            },
+                                            {
+                                                Route(
+                                                    RouteProps::builder()
+                                                        .path(WildcardSegment("any"))
+                                                        .view(NotFound)
+                                                        .build(),
+                                                )
+                                            },
+                                        )
+                                    }))
+                                    .build(),
+                            ))
+                        },
+                    )
                 }))
                 .build(),
         ),
