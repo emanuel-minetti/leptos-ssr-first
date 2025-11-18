@@ -1,4 +1,7 @@
-use leptos::html::{main};
+use crate::layout::navbar::NavBar;
+use crate::pages::home_page::HomePage;
+use crate::pages::not_found::NotFound;
+use leptos::html::main;
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, TitleProps};
 use leptos_router::components::{RouteProps, RouterProps, RoutesProps};
@@ -6,9 +9,6 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
-use crate::layout::navbar::NavBar;
-use crate::pages::home_page::HomePage;
-use crate::pages::not_found::NotFound;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -72,9 +72,6 @@ pub fn App() -> impl IntoView {
     ))
 }
 
-/// 404 - Not Found
-
-
 pub fn get_lang_from_browser() -> Option<String> {
     let window = web_sys::window().expect("no global `window` exists");
     let navigator_lang = window.navigator().language();
@@ -86,6 +83,7 @@ pub fn get_lang_from_browser() -> Option<String> {
 
     if local_storage_lang.is_none() && navigator_lang.is_some() {
         Some(navigator_lang.unwrap()[0..2].to_string())
-    } else { local_storage_lang }
+    } else {
+        local_storage_lang
+    }
 }
-

@@ -1,16 +1,25 @@
-use leptos::{component, IntoView};
-use leptos::html::{a, div, h1, nav, ElementChild};
+use leptos::html::{a, div, form, nav, option, p, select, ElementChild};
 use leptos::prelude::ClassAttribute;
+use leptos::{component, IntoView};
 
 #[component]
 pub fn NavBar() -> impl IntoView {
     nav()
-        .class("navbar navbar-expand-lg bg-body-tertiary")
-        .child(
-            div().class("container-fluid").child(
+        .class("navbar bg-body-tertiary")
+        .child(div().class("container-fluid d-flex justify-content-between").child((
+            {
                 a().class("navbar-brand link-underline link-underline-opacity-0 link-dark")
                     .href("/")
-                    .child(h1().child("Leptos SSR First")),
-            ),
-        )
+                    .child(p().class("fs-3").child("Leptos SSR First"))
+            },
+            {
+                form().class("d-inline-flex p-2").child(
+                    select()
+                        .class("form-select")
+                        .child(({ option().value("en").child("English") }, {
+                            option().value("de").child("German")
+                        })),
+                )
+            },
+        )))
 }
