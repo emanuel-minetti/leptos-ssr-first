@@ -1,6 +1,6 @@
 use leptos::html::{a, div, form, nav, option, p, select, ElementChild};
 use leptos::prelude::{ClassAttribute, OnAttribute, Set, WriteSignal};
-use leptos::{component, logging, IntoView};
+use leptos::{component, IntoView};
 use leptos::ev;
 use wasm_bindgen::{JsCast};
 use web_sys::{Event, HtmlSelectElement};
@@ -24,7 +24,8 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                                 ev::change,
                                 move |ev: Event| {
                                     let option_value = ev.target().unwrap().value_of().unchecked_into::<HtmlSelectElement>().value();
-                                    lang_setter.set(option_value);
+                                    lang_setter.set(option_value.clone());
+                                    set_lang_to_browser(option_value);
                                 }
                             )
                             .child(({ option().value("en").child("English") }, {
@@ -34,4 +35,10 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                 },
             )),
     )
+}
+
+fn set_lang_to_browser(lang: String) {
+    let window = web_sys::window().expect("no global `window` exists");
+    let local_storage = window.local_storage().expect("no global storage exists").unwrap();
+    local_storage.set_item("lang", &lang).unwrap();
 }

@@ -75,7 +75,7 @@ pub fn App() -> impl IntoView {
     ))
 }
 
-pub fn get_lang_from_browser() -> Option<String> {
+fn get_lang_from_browser() -> Option<String> {
     let window = web_sys::window().expect("no global `window` exists");
     let navigator_lang = window.navigator().language();
     let local_storage = window.local_storage().expect("no global storage exists");
