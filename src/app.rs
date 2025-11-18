@@ -1,4 +1,5 @@
 use crate::i18n::{use_i18n, Locale};
+use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::pages::home_page::HomePage;
 use crate::pages::not_found::NotFound;
@@ -12,6 +13,8 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
+use crate::pages::imprint::Imprint;
+use crate::pages::privacy::Privacy;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -75,6 +78,22 @@ pub fn App() -> impl IntoView {
                                             {
                                                 Route(
                                                     RouteProps::builder()
+                                                        .path(StaticSegment("/imprint"))
+                                                        .view(Imprint)
+                                                        .build(),
+                                                )
+                                            },
+                                            {
+                                                Route(
+                                                    RouteProps::builder()
+                                                        .path(StaticSegment("/privacy"))
+                                                        .view(Privacy)
+                                                        .build(),
+                                                )
+                                            },
+                                            {
+                                                Route(
+                                                    RouteProps::builder()
                                                         .path(WildcardSegment("any"))
                                                         .view(NotFound)
                                                         .build(),
@@ -85,6 +104,7 @@ pub fn App() -> impl IntoView {
                                     .build(),
                             ))
                         },
+                        { Footer() },
                     )
                 }))
                 .build(),

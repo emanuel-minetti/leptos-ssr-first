@@ -1,5 +1,7 @@
 {
   "english": "Englisch",
   "german": "Deutsch",
-  "preferred": "Bevorzugte Sprache"
+  "preferred": "Bevorzugte Sprache",
+  "privacy": "Datenschutzerklärung",
+  "imprint": "Impressum"
 }

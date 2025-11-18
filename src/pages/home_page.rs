@@ -1,7 +1,7 @@
 use crate::i18n::use_i18n;
 use leptos::context::use_context;
 use leptos::html::{div, h1, ElementChild};
-use leptos::prelude::{Get, ReadSignal};
+use leptos::prelude::{ClassAttribute, Get, ReadSignal};
 use leptos::{component, IntoView};
 use leptos_i18n::t;
 
@@ -9,7 +9,7 @@ use leptos_i18n::t;
 pub fn HomePage() -> impl IntoView {
     let lang = use_context::<ReadSignal<String>>().expect("no lang specified");
     let i18n = use_i18n();
-    div().child((
+    div().class("container").child((
         { h1().child("Hello Emu! Welcome to the Home Page!") },
         { move || t![i18n, preferred] },
         { ": " },
