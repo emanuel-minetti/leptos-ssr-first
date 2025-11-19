@@ -2,7 +2,9 @@ use crate::i18n::{use_i18n, Locale};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::pages::home_page::HomePage;
+use crate::pages::imprint::Imprint;
 use crate::pages::not_found::NotFound;
+use crate::pages::privacy::Privacy;
 use leptos::html::main;
 use leptos::prelude::*;
 use leptos_i18n::context::{init_i18n_context_with_options, I18nContextOptions};
@@ -13,11 +15,11 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
-use crate::pages::imprint::Imprint;
-use crate::pages::privacy::Privacy;
+use crate::model::user::User;
 
 #[component]
 pub fn App() -> impl IntoView {
+    // load, provide and initialize i18n context
     let i18n: I18nContext<Locale, _> = init_i18n_context_with_options(I18nContextOptions {
         enable_cookie: true,
         cookie_name: Default::default(),
@@ -28,7 +30,10 @@ pub fn App() -> impl IntoView {
     let i18n_signal = use_i18n();
     i18n_signal.set_locale(Locale::en);
 
+    // initializing the global value lang needed by non log in pages
     let (lang, set_lang) = signal("en".to_string());
+
+    // getting the lang from locale storage or browser settings
     Effect::new(move |_| {
         let browser_lang = get_lang_from_browser();
         if browser_lang.is_some() {
@@ -48,6 +53,17 @@ pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
+    // initializing and providing the user
+    //let (user, set_user) = signal(None::<User>);
+    let (user, set_user) = signal(Some( User {
+        name: "Emanuel Minetti".to_string(),
+        lang: "de".to_string(),
+        token: "".to_string(),
+        expires: 0
+    }));
+    provide_context(user);
+
+    // VIEW
     View::new((
         Stylesheet(
             StylesheetProps::builder()

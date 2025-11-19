@@ -3,5 +3,7 @@
   "german": "Deutsch",
   "preferred": "Bevorzugte Sprache",
   "privacy": "Datenschutzerklärung",
-  "imprint": "Impressum"
+  "imprint": "Impressum",
+  "notLoggedIn": "Sie sind nicht angemeldet",
+  "loggedInAs": "Sie sind angemeldet als {{ name }}"
 }

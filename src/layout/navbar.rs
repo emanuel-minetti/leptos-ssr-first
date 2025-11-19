@@ -1,7 +1,8 @@
 use crate::i18n::{t, use_i18n, Locale};
+use crate::model::user::User;
 use leptos::ev;
-use leptos::html::{a, div, form, nav, option, p, select, ElementChild};
-use leptos::prelude::{ClassAttribute, OnAttribute, Set, WriteSignal};
+use leptos::html::*;
+use leptos::prelude::*;
 use leptos::{component, IntoView};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlSelectElement};
@@ -19,6 +20,7 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                         .href("/")
                         .child(p().class("fs-3").child("Leptos SSR First"))
                 },
+                { NavBarLoginInfo() },
                 {
                     form().class("d-inline-flex p-2").child(
                         select()
@@ -41,6 +43,19 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                 },
             )),
     )
+}
+
+#[component]
+fn NavBarLoginInfo() -> impl IntoView {
+    let user = use_context::<ReadSignal<Option<User>>>().expect("no user specified in context");
+    let i18n = use_i18n();
+
+    div().child(span().class("navbar-text opacity-75").child({
+        move || match user.get() {
+            None => t![i18n, notLoggedIn].into_any(),
+            Some(user) => t![i18n, loggedInAs, name = user.name].into_any(),
+        }
+    }))
 }
 
 fn set_lang_to_i18n(lang: String) {
