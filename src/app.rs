@@ -16,6 +16,7 @@ use leptos_router::{
     StaticSegment, WildcardSegment,
 };
 use crate::model::user::User;
+use crate::pages::login::Login;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -104,6 +105,14 @@ pub fn App() -> impl IntoView {
                                                     RouteProps::builder()
                                                         .path(StaticSegment("/privacy"))
                                                         .view(Privacy)
+                                                        .build(),
+                                                )
+                                            },
+                                            {
+                                                Route(
+                                                    RouteProps::builder()
+                                                        .path(StaticSegment("/login"))
+                                                        .view(Login)
                                                         .build(),
                                                 )
                                             },

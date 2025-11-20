@@ -5,5 +5,9 @@
   "privacy": "Datenschutzerklärung",
   "imprint": "Impressum",
   "notLoggedIn": "Sie sind nicht angemeldet",
-  "loggedInAs": "Sie sind angemeldet als {{ name }}"
+  "loggedInAs": "Sie sind angemeldet als {{ name }}",
+  "login": "Login",
+  "loginIntro": "Bitte melden Sie sich an",
+  "username": "Benutzername",
+  "password": "Passwort"
 }

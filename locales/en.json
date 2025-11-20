@@ -5,5 +5,9 @@
   "privacy": "Privacy Declaration",
   "imprint": "Imprint",
   "notLoggedIn": "You are not logged in",
-  "loggedInAs": "You are logged in as {{ name }}"
+  "loggedInAs": "You are logged in as {{ name }}",
+  "login": "Login",
+  "loginIntro": "Please log in",
+  "username": "Username",
+  "password": "Password"
 }
