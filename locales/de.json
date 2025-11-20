@@ -6,7 +6,7 @@
   "imprint": "Impressum",
   "notLoggedIn": "Sie sind nicht angemeldet",
   "loggedInAs": "Sie sind angemeldet als {{ name }}",
-  "login": "Login",
+  "login": "Anmelden",
   "loginIntro": "Bitte melden Sie sich an",
   "username": "Benutzername",
   "password": "Passwort"

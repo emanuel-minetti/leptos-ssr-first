@@ -10,7 +10,7 @@ use leptos::prelude::*;
 use leptos_i18n::context::{init_i18n_context_with_options, I18nContextOptions};
 use leptos_i18n::I18nContext;
 use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, TitleProps};
-use leptos_router::components::{RouteProps, RouterProps, RoutesProps};
+use leptos_router::components::{ProtectedRoute, ProtectedRouteProps, RouteProps, RouterProps, RoutesProps};
 use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
@@ -55,14 +55,22 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     // initializing and providing the user
-    //let (user, set_user) = signal(None::<User>);
-    let (user, set_user) = signal(Some( User {
-        name: "Emanuel Minetti".to_string(),
-        lang: "de".to_string(),
-        token: "".to_string(),
-        expires: 0
-    }));
+    let (user, set_user) = signal(None::<User>);
+    // let (user, set_user) = signal(Some( User {
+    //     name: "Emanuel Minetti".to_string(),
+    //     lang: "de".to_string(),
+    //     token: "".to_string(),
+    //     expires: 0
+    // }));
     provide_context(user);
+
+    // the guard for protected routes
+    let is_logged_in = move || {
+        if user.get().is_some() {
+            Some(true)
+        }
+        else { Some(false) }
+    };
 
     // VIEW
     View::new((
@@ -84,14 +92,6 @@ pub fn App() -> impl IntoView {
                                     .fallback(move || "Not Found")
                                     .children(ToChildren::to_children(move || {
                                         (
-                                            {
-                                                Route(
-                                                    RouteProps::builder()
-                                                        .path(StaticSegment(""))
-                                                        .view(HomePage)
-                                                        .build(),
-                                                )
-                                            },
                                             {
                                                 Route(
                                                     RouteProps::builder()
@@ -117,10 +117,22 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
-                                                Route(
-                                                    RouteProps::builder()
+                                                ProtectedRoute(
+                                                    ProtectedRouteProps::builder()
+                                                        .path(StaticSegment(""))
+                                                        .view(HomePage)
+                                                        .redirect_path(move || "/login" )
+                                                        .condition(move || is_logged_in())
+                                                        .build(),
+                                                )
+                                            },
+                                            {
+                                                ProtectedRoute(
+                                                    ProtectedRouteProps::builder()
                                                         .path(WildcardSegment("any"))
                                                         .view(NotFound)
+                                                        .redirect_path(move || "/login" )
+                                                        .condition(move || is_logged_in())
                                                         .build(),
                                                 )
                                             },

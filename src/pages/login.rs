@@ -45,6 +45,11 @@ pub fn Login() -> impl IntoView {
                         },
                     ))
                 },
+                {
+                    button().r#type("submit").class("btn btn-primary").child(
+                        t![i18n, login]
+                    )
+                },
             ))
         }))
 }
