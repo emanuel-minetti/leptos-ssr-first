@@ -1,8 +1,10 @@
 use crate::i18n::{use_i18n, Locale};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
+use crate::model::user::User;
 use crate::pages::home_page::HomePage;
 use crate::pages::imprint::Imprint;
+use crate::pages::login::Login;
 use crate::pages::not_found::NotFound;
 use crate::pages::privacy::Privacy;
 use leptos::html::main;
@@ -10,13 +12,13 @@ use leptos::prelude::*;
 use leptos_i18n::context::{init_i18n_context_with_options, I18nContextOptions};
 use leptos_i18n::I18nContext;
 use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, TitleProps};
-use leptos_router::components::{ProtectedRoute, ProtectedRouteProps, RouteProps, RouterProps, RoutesProps};
+use leptos_router::components::{
+    ProtectedRoute, ProtectedRouteProps, RouteProps, RouterProps, RoutesProps,
+};
 use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
-use crate::model::user::User;
-use crate::pages::login::Login;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -68,8 +70,9 @@ pub fn App() -> impl IntoView {
     let is_logged_in = move || {
         if user.get().is_some() {
             Some(true)
+        } else {
+            Some(false)
         }
-        else { Some(false) }
     };
 
     // VIEW
@@ -117,11 +120,12 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
+                                                //TODO add a get param to retrieve the orig url
                                                 ProtectedRoute(
                                                     ProtectedRouteProps::builder()
                                                         .path(StaticSegment(""))
                                                         .view(HomePage)
-                                                        .redirect_path(move || "/login" )
+                                                        .redirect_path(move || "/login")
                                                         .condition(move || is_logged_in())
                                                         .build(),
                                                 )
@@ -131,7 +135,7 @@ pub fn App() -> impl IntoView {
                                                     ProtectedRouteProps::builder()
                                                         .path(WildcardSegment("any"))
                                                         .view(NotFound)
-                                                        .redirect_path(move || "/login" )
+                                                        .redirect_path(move || "/login")
                                                         .condition(move || is_logged_in())
                                                         .build(),
                                                 )
