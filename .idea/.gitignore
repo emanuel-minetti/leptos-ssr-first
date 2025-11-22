@@ -7,3 +7,6 @@
 /dataSources/
 /dataSources.local.xml
 /dictionaries/project.xml
+/data_source_mapping.xml
+/dataSources.xml
+/sqldialects.xml

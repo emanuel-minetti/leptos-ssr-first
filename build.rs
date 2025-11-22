@@ -1,7 +1,11 @@
-use leptos_i18n_build::TranslationsInfos;
 use std::path::PathBuf;
+use leptos_i18n_build::TranslationsInfos;
 
 fn main() {
+    // trigger recompilation for sqlx
+    println!("cargo:rerun-if-changed=migrations");
+
+    // trigger recompilation for leptos-i18n
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=Cargo.toml");
 
