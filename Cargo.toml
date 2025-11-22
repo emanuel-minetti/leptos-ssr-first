@@ -44,7 +44,8 @@ ssr = [
   "leptos_i18n/actix",
   "leptos_i18n_build/ssr",
   "sqlx/postgres",
-  "sqlx/runtime-tokio"
+  "sqlx/runtime-tokio",
+  "sqlx/uuid"
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

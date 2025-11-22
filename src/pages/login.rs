@@ -74,5 +74,23 @@ pub fn Login() -> impl IntoView {
 
 #[server(endpoint = "login-test")]
 pub async fn login(creds: Credentials) -> Result<String, ServerFnError> {
-    Ok("geschafft".to_string())
+    use sqlx::query;
+    use sqlx::{Pool, Postgres};
+
+    let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
+    let account_row = query!(
+        r#"
+            SELECT name
+            FROM account
+            WHERE username = $1
+        "#,
+        creds.username
+    )
+    .fetch_optional(&db_pool)
+    .await?;
+
+    match account_row {
+        Some(account_row) => Ok(account_row.name),
+        None => Ok("nicht gefunden".to_string()),
+    }
 }
