@@ -1,15 +1,23 @@
 use crate::i18n::*;
+use crate::model::user::Language;
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
 use leptos::prelude::*;
 use leptos::{component, server, IntoView};
 use serde::{Deserialize, Serialize};
+use sqlx::query_as;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Credentials {
     username: String,
     password: String,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct LoginServerResponse {
+    name: String,
+    preferred_language: Language,
 }
 
 #[component]
@@ -72,25 +80,33 @@ pub fn Login() -> impl IntoView {
         }))
 }
 
-#[server(endpoint = "login-test")]
-pub async fn login(creds: Credentials) -> Result<String, ServerFnError> {
-    use sqlx::query;
+#[server]
+pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnError> {
+    use crate::model::user::Language;
+    use sqlx::query_as;
     use sqlx::{Pool, Postgres};
 
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
-    let account_row = query!(
+    let account_row = query_as!(
+        LoginServerResponse,
         r#"
-            SELECT name
-            FROM account
-            WHERE username = $1
-        "#,
+                SELECT name, preferred_language as "preferred_language: Language"
+                FROM account
+                WHERE username = $1
+            "#,
         creds.username
     )
     .fetch_optional(&db_pool)
-    .await?;
+    .await
+    .expect("no DB conn");
 
     match account_row {
-        Some(account_row) => Ok(account_row.name),
-        None => Ok("nicht gefunden".to_string()),
+        None => Ok(LoginServerResponse::default()),
+        Some(row) => Ok({
+            LoginServerResponse {
+                name: row.name,
+                preferred_language: row.preferred_language,
+            }
+        }),
     }
 }
