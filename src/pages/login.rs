@@ -93,7 +93,7 @@ pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnEr
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
     let account_row = query!(
         r#"
-                SELECT name, pw_hash, preferred_language as "preferred_language: Language"
+                SELECT name, pw_hash, id, preferred_language as "preferred_language: Language"
                 FROM account
                 WHERE username = $1
             "#,
@@ -113,6 +113,7 @@ pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnEr
             else {
                 name = row.name;
                 preferred_lang = row.preferred_language;
+
             }
         },
     }
