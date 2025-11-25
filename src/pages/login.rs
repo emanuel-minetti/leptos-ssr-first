@@ -6,18 +6,11 @@ use leptos::html::*;
 use leptos::prelude::*;
 use leptos::{component, server, IntoView};
 use serde::{Deserialize, Serialize};
-use sqlx::query_as;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Credentials {
     username: String,
     password: String,
-}
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct LoginServerResponse {
-    name: String,
-    preferred_language: Language,
 }
 
 #[component]
@@ -80,33 +73,53 @@ pub fn Login() -> impl IntoView {
         }))
 }
 
+#[derive(Serialize, Deserialize, Default)]
+pub struct LoginServerResponse {
+    name: String,
+    preferred_language: Language,
+    error: String,
+}
+
 #[server]
 pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnError> {
     use crate::model::user::Language;
-    use sqlx::query_as;
+    use sqlx::query;
     use sqlx::{Pool, Postgres};
+    use bcrypt::verify;
 
+    let mut name = "".to_string();
+    let mut preferred_lang = Language::default();
+    let mut error = "".to_string();
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
-    let account_row = query_as!(
-        LoginServerResponse,
+    let account_row = query!(
         r#"
-                SELECT name, preferred_language as "preferred_language: Language"
+                SELECT name, pw_hash, preferred_language as "preferred_language: Language"
                 FROM account
                 WHERE username = $1
             "#,
         creds.username
     )
-    .fetch_optional(&db_pool)
-    .await
-    .expect("no DB conn");
+        .fetch_optional(&db_pool)
+        .await.map_err(|e| ServerFnError::new(e))?;
 
     match account_row {
-        None => Ok(LoginServerResponse::default()),
-        Some(row) => Ok({
-            LoginServerResponse {
-                name: row.name,
-                preferred_language: row.preferred_language,
+        None => {
+            error = "Invalid username".to_string();
+        },
+        Some(row) => {
+            if !verify(&creds.password, &row.pw_hash).unwrap() {
+                error = "Invalid password".to_string();
             }
-        }),
+            else {
+                name = row.name;
+                preferred_lang = row.preferred_language;
+            }
+        },
     }
+
+    Ok(LoginServerResponse {
+        name,
+        preferred_language: preferred_lang,
+        error
+    })
 }
