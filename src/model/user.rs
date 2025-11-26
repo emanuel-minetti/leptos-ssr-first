@@ -5,7 +5,7 @@ pub struct User {
     pub(crate) name: String,
     pub(crate) lang: String,
     pub(crate) token: String,
-    pub(crate) expires: u64,
+    pub(crate) expires: i64,
 }
 
 #[cfg_attr(feature = "ssr", derive(sqlx::Type))]
@@ -15,4 +15,13 @@ pub enum Language {
     #[default]
     En,
     De,
+}
+
+impl ToString for Language {
+    fn to_string(&self) -> std::string::String {
+        match &self {
+            Language::En => {"en".to_string()}
+            Language::De => {"de".to_string()}
+        }
+    }
 }

@@ -4,7 +4,7 @@ use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::model::user::User;
 use crate::pages::home_page::HomePage;
 use crate::pages::imprint::Imprint;
-use crate::pages::login::Login;
+use crate::pages::login::{Login, LoginProps};
 use crate::pages::not_found::NotFound;
 use crate::pages::privacy::Privacy;
 use leptos::html::main;
@@ -115,7 +115,13 @@ pub fn App() -> impl IntoView {
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment("/login"))
-                                                        .view(Login)
+                                                        .view(move || {
+                                                            Login(
+                                                                LoginProps::builder()
+                                                                    .set_user(set_user)
+                                                                    .build(),
+                                                            )
+                                                        })
                                                         .build(),
                                                 )
                                             },

@@ -1,5 +1,5 @@
 use crate::i18n::*;
-use crate::model::user::Language;
+use crate::model::user::{Language, User};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
@@ -14,9 +14,10 @@ pub struct Credentials {
 }
 
 #[component]
-pub fn Login() -> impl IntoView {
+pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
+    let response_future = login.value();
 
     div()
         .class("container")
@@ -70,11 +71,41 @@ pub fn Login() -> impl IntoView {
                     }))
                     .build(),
             )
-        }))
+        }, {
+            div().child(
+                match response_future.get() {
+                    None => {div().class("alert alert-info").child("Waiting for server").into_any()}
+                    Some(result) => {
+                        match result {
+                            Ok(response) => {
+                                //TODO rethink! Should be moved to an event handler inside the form
+                                let _ = move || {
+                                    set_user.set(Some(
+                                        User {
+                                            name: response.name,
+                                            lang: response.preferred_language.to_string(),
+                                            token: response.session_id,
+                                            expires: response.expires_at
+                                        }
+                                    ));
+                                };
+                                div().hidden(true).child("").into_any()
+                            }
+                            Err(_) => {
+                                div().class("alert alert-danger").child("Error while login").into_any()
+                            }
+                        }
+                    }
+                }
+                )
+        }
+        ))
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 pub struct LoginServerResponse {
+    expires_at: i64,
+    session_id: String,
     name: String,
     preferred_language: Language,
     error: String,
@@ -83,15 +114,17 @@ pub struct LoginServerResponse {
 #[server]
 pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnError> {
     use crate::model::user::Language;
+    use bcrypt::verify;
     use sqlx::query;
     use sqlx::{Pool, Postgres};
-    use bcrypt::verify;
 
     let mut name = "".to_string();
     let mut preferred_lang = Language::default();
     let mut error = "".to_string();
+    let mut expires_at = 0;
+    let mut session_id = "".to_string();
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
-    let account_row = query!(
+    let account_row_result = query!(
         r#"
                 SELECT name, pw_hash, id, preferred_language as "preferred_language: Language"
                 FROM account
@@ -99,28 +132,50 @@ pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnEr
             "#,
         creds.username
     )
-        .fetch_optional(&db_pool)
-        .await.map_err(|e| ServerFnError::new(e))?;
+    .fetch_optional(&db_pool)
+    .await;
 
-    match account_row {
-        None => {
-            error = "Invalid username".to_string();
-        },
-        Some(row) => {
-            if !verify(&creds.password, &row.pw_hash).unwrap() {
-                error = "Invalid password".to_string();
+    match account_row_result {
+        Ok(account_row) => match account_row {
+            None => {
+                error = "Invalid username or password".to_string();
             }
-            else {
-                name = row.name;
-                preferred_lang = row.preferred_language;
-
+            Some(account_row_record) => {
+                if !verify(&creds.password, &account_row_record.pw_hash).unwrap() {
+                    error = "Invalid username or password".to_string();
+                } else {
+                    name = account_row_record.name;
+                    preferred_lang = account_row_record.preferred_language;
+                    let session_row = query!(
+                        r#"
+                            INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at
+                            "#,
+                        account_row_record.id
+                    )
+                    .fetch_one(&db_pool)
+                    .await;
+                    match session_row {
+                        Ok(session_row_record) => {
+                            expires_at = session_row_record.expires_at.as_utc().unix_timestamp();
+                            session_id = session_row_record.id.to_string();
+                        }
+                        Err(_) => {
+                            error = "Error creating session".to_string();
+                        }
+                    }
+                }
             }
         },
+        Err(_) => {
+            error = "No DB connection at 'login'".to_string();
+        }
     }
 
     Ok(LoginServerResponse {
         name,
         preferred_language: preferred_lang,
-        error
+        error,
+        expires_at,
+        session_id,
     })
 }

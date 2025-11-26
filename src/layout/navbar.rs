@@ -33,7 +33,7 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                                     .unchecked_into::<HtmlSelectElement>()
                                     .value();
                                 lang_setter.set(option_value.clone());
-                                set_lang_to_browser(option_value.clone());
+                                set_lang_to_locale_storage(option_value.clone());
                                 set_lang_to_i18n(option_value);
                             })
                             .child(({ option().value("en").child(t![i18n, english]) }, {
@@ -67,7 +67,7 @@ fn set_lang_to_i18n(lang: String) {
     }
 }
 
-fn set_lang_to_browser(lang: String) {
+fn set_lang_to_locale_storage(lang: String) {
     let window = web_sys::window().expect("no global `window` exists");
     let local_storage = window
         .local_storage()
