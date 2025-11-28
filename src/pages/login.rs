@@ -17,7 +17,47 @@ pub struct Credentials {
 pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
-    let response_future = login.value();
+    let message = move || match login.value().get() {
+        None => {
+            if login.pending().get() {
+                div()
+                    .class("alert alert-info")
+                    .child("Waiting for server")
+                    .into_any()
+            } else {
+                div().hidden(true).into_any()
+            }
+        }
+        Some(result) => match result {
+            Ok(response) => {
+                if response.error.is_empty() {
+                    set_user.set(Some(User {
+                        name: response.name,
+                        lang: response.preferred_language.to_string(),
+                        token: response.session_id,
+                        expires: response.expires_at,
+                    }));
+                    div()
+                        .class("alert alert-success")
+                        .child("Redirecting ...")
+                        .into_any()
+                } else {
+                    div()
+                        .class("alert alert-danger")
+                        .child(response.error)
+                        .into_any()
+                }
+            }
+            Err(err) => div()
+                .class("alert alert-danger")
+                .child(
+                    "Server Error: "
+                        .to_string()
+                        .push_str(err.to_string().as_str()),
+                )
+                .into_any(),
+        },
+    };
 
     div()
         .class("container")
@@ -67,39 +107,12 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                                     .class("btn btn-primary")
                                     .child(t![i18n, login])
                             },
+                            { div().class("mt-2").child( move || message() ) },
                         )
                     }))
                     .build(),
             )
-        }, {
-            div().child(
-                match response_future.get() {
-                    None => {div().class("alert alert-info").child("Waiting for server").into_any()}
-                    Some(result) => {
-                        match result {
-                            Ok(response) => {
-                                //TODO rethink! Should be moved to an event handler inside the form
-                                let _ = move || {
-                                    set_user.set(Some(
-                                        User {
-                                            name: response.name,
-                                            lang: response.preferred_language.to_string(),
-                                            token: response.session_id,
-                                            expires: response.expires_at
-                                        }
-                                    ));
-                                };
-                                div().hidden(true).child("").into_any()
-                            }
-                            Err(_) => {
-                                div().class("alert alert-danger").child("Error while login").into_any()
-                            }
-                        }
-                    }
-                }
-                )
-        }
-        ))
+        }))
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
