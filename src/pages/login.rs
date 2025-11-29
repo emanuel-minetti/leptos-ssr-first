@@ -37,6 +37,7 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                         token: response.session_id,
                         expires: response.expires_at,
                     }));
+                    //TODO redirect to orig url
                     div()
                         .class("alert alert-success")
                         .child("Redirecting ...")
