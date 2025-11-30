@@ -59,7 +59,7 @@ pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
                                     // using unwrap here because we know user is Some
                                     let token = user.get().unwrap().token;
                                     spawn_local(async {
-                                        set_lang(lang, token)
+                                        set_lang(lang, token.into())
                                             .await
                                             .expect("Got server error setting lang");
                                     });

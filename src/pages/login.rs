@@ -1,7 +1,7 @@
 use crate::i18n::*;
 use crate::model::language::Language;
 use crate::model::user::User;
-use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage};
+use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage, set_to_session_storage};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
@@ -52,16 +52,19 @@ pub fn Login(
                 if response.error.is_empty() {
                     set_user.set(Some(User {
                         name: response.name,
-                        token: response.session_id,
+                        token: response.session_id.clone(),
                         expires: response.expires_at,
                     }));
-                    //set lang (in cookie, local storage, context) if applicable
+                    // set lang (in cookie, local storage, context) if applicable
                     if response.preferred_language.to_string() != lang.get() {
                         let new_lang = response.preferred_language.into();
                         lang_setter.set(new_lang);
                         set_lang_to_locale_storage(new_lang);
                         set_lang_to_i18n(new_lang);
                     }
+                    // set expires and token to session storage
+                    set_to_session_storage("token", response.session_id.as_str());
+                    set_to_session_storage("expires", response.expires_at.to_string().as_str());
                     div()
                         .class("alert alert-success")
                         .child(t!(i18n, redirecting))
