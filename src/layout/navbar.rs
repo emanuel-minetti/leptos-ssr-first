@@ -33,49 +33,54 @@ pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
                 },
                 { NavBarLoginInfo() },
                 {
-                    form()
-                        .class("d-inline-flex p-2")
-                        .on(ev::change, move |ev: Event| {
-                            let option_value = ev
-                                .target()
-                                .unwrap()
-                                .value_of()
-                                .unchecked_into::<HtmlSelectElement>()
-                                .value();
-                            let option_value = if option_value.to_string() == "en" {
-                                "en"
-                            } else {
-                                "de"
-                            };
-                            lang_setter.set(option_value);
-                            set_lang_to_locale_storage(&option_value);
-                            set_lang_to_i18n(&option_value);
-                            // set lang to server if applicable
-                            if user.get().is_some() {
-                                let lang: Language = lang.get().into();
-                                // using unwrap here because we know user is Some
-                                let token = user.get().unwrap().token;
-                                spawn_local(async {
-                                    set_lang(lang, token)
-                                        .await
-                                        .expect("Got server error setting lang");
-                                });
-                            }
-                        })
-                        .child(select().class("form-select").child((
-                            {
-                                option()
-                                    .value("en")
-                                    .selected(move || lang.get() == "en")
-                                    .child(t![i18n, english])
-                            },
-                            {
-                                option()
-                                    .value("de")
-                                    .selected(move || lang.get() == "de")
-                                    .child(t![i18n, german])
-                            },
-                        )))
+                    form().class("d-inline-flex p-2").child(
+                        select()
+                            .class("form-select")
+                            // needed to be the select element reactive
+                            .prop("value", move || lang.get())
+                            .on(ev::change, move |ev: Event| {
+                                let option_value = ev
+                                    .target()
+                                    .unwrap()
+                                    .value_of()
+                                    .unchecked_into::<HtmlSelectElement>()
+                                    .value();
+                                let option_value = if option_value.to_string() == "en" {
+                                    "en"
+                                } else {
+                                    "de"
+                                };
+                                lang_setter.set(option_value);
+                                set_lang_to_locale_storage(&option_value);
+                                set_lang_to_i18n(&option_value);
+                                // set lang to server if applicable
+                                if user.get().is_some() {
+                                    let lang: Language = lang.get().into();
+                                    // using unwrap here because we know user is Some
+                                    let token = user.get().unwrap().token;
+                                    spawn_local(async {
+                                        set_lang(lang, token)
+                                            .await
+                                            .expect("Got server error setting lang");
+                                    });
+                                }
+                            })
+                            .aria_label("Language")
+                            .child((
+                                {
+                                    option()
+                                        .value("en")
+                                        .selected(move || lang.get() == "en")
+                                        .child(t![i18n, english])
+                                },
+                                {
+                                    option()
+                                        .value("de")
+                                        .selected(move || lang.get() == "de")
+                                        .child(t![i18n, german])
+                                },
+                            )),
+                    )
                 },
             )),
     )
