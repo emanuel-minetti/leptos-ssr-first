@@ -36,7 +36,7 @@ pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
                     form().class("d-inline-flex p-2").child(
                         select()
                             .class("form-select")
-                            // needed to be the select element reactive
+                            // needed for the select element to be reactive
                             .prop("value", move || lang.get())
                             .on(ev::change, move |ev: Event| {
                                 let option_value = ev
