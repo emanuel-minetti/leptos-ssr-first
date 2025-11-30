@@ -24,13 +24,13 @@ pub fn Login(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
+    let lang = use_context::<ReadSignal<&str>>().expect("lang missing from context");
     let orig_url = move || {
         use_query_map()
             .get()
             .get("orig_url")
             .expect("orig_url missing from query")
     };
-    let lang = use_context::<ReadSignal<&str>>().expect("lang missing from context");
     let message = move || match login.value().get() {
         None => {
             if login.pending().get() {
@@ -195,9 +195,7 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
                     name = account_row_record.name;
                     preferred_lang = account_row_record.preferred_language;
                     let session_row = query!(
-                        r#"
-                            INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at
-                            "#,
+                        r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
                         account_row_record.id
                     )
                     .fetch_one(&db_pool)
