@@ -9,5 +9,9 @@
   "login": "Login",
   "loginIntro": "Please log in",
   "username": "Username",
-  "password": "Password"
+  "password": "Password",
+  "loading": "Waiting for server response...",
+  "invalidCredentials": "Invalid username or password",
+  "serverError": "Server Error: {{ error }}",
+  "redirecting": "Redirecting ..."
 }

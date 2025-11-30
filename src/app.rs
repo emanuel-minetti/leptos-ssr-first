@@ -15,6 +15,7 @@ use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, Titl
 use leptos_router::components::{
     ProtectedRoute, ProtectedRouteProps, RouteProps, RouterProps, RoutesProps,
 };
+use leptos_router::hooks::use_params_map;
 use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
@@ -126,12 +127,11 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
-                                                //TODO add a get param to retrieve the orig url
                                                 ProtectedRoute(
                                                     ProtectedRouteProps::builder()
                                                         .path(StaticSegment(""))
                                                         .view(HomePage)
-                                                        .redirect_path(move || "/login")
+                                                        .redirect_path(move || "/login?orig_url=/")
                                                         .condition(move || is_logged_in())
                                                         .build(),
                                                 )
@@ -141,7 +141,12 @@ pub fn App() -> impl IntoView {
                                                     ProtectedRouteProps::builder()
                                                         .path(WildcardSegment("any"))
                                                         .view(NotFound)
-                                                        .redirect_path(move || "/login")
+                                                        .redirect_path(move || {
+                                                            let params = use_params_map().get();
+                                                            let (_, orig_url) =
+                                                                params.into_iter().last().unwrap();
+                                                            format!("/login?orig_url={}", orig_url)
+                                                        })
                                                         .condition(move || is_logged_in())
                                                         .build(),
                                                 )

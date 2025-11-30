@@ -5,24 +5,37 @@ use leptos::form::ActionForm;
 use leptos::html::*;
 use leptos::prelude::*;
 use leptos::{component, server, IntoView};
+use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Credentials {
+pub struct LoginCallParams {
     username: String,
     password: String,
+    orig_url: String,
 }
 
 #[component]
 pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
+    let orig_url = move || {
+        use_query_map()
+            .get()
+            .get("orig_url")
+            .expect("orig_url missing from query")
+    };
     let message = move || match login.value().get() {
         None => {
             if login.pending().get() {
                 div()
-                    .class("alert alert-info")
-                    .child("Waiting for server")
+                    .class("text-center")
+                    .child(
+                        div()
+                            .class("spinner-border")
+                            .role("status")
+                            .child(span().class("visually-hidden").child(t!(i18n, loading))),
+                    )
                     .into_any()
             } else {
                 div().hidden(true).into_any()
@@ -37,25 +50,25 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                         token: response.session_id,
                         expires: response.expires_at,
                     }));
-                    //TODO redirect to orig url
                     div()
                         .class("alert alert-success")
-                        .child("Redirecting ...")
+                        .child(t!(i18n, redirecting))
                         .into_any()
                 } else {
+                    let error_message = if response.error == "Invalid username or password" {
+                        t!(i18n, invalidCredentials).into_any()
+                    } else {
+                        t!(i18n, serverError, error = response.error).into_any()
+                    };
                     div()
                         .class("alert alert-danger")
-                        .child(response.error)
+                        .child(error_message)
                         .into_any()
                 }
             }
             Err(err) => div()
                 .class("alert alert-danger")
-                .child(
-                    "Server Error: "
-                        .to_string()
-                        .push_str(err.to_string().as_str()),
-                )
+                .child(t!(i18n, serverError, error = err.to_string()))
                 .into_any(),
         },
     };
@@ -82,7 +95,7 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                                         .r#type("text")
                                         .class("form-control")
                                         .id("ref1")
-                                        .name("creds[username]")
+                                        .name("params[username]")
                                 },
                             )),
                             {
@@ -98,9 +111,15 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                                             .r#type("text")
                                             .class("form-control")
                                             .id("ref2")
-                                            .name("creds[password]")
+                                            .name("params[password]")
                                     },
                                 ))
+                            },
+                            {
+                                input()
+                                    .r#type("hidden")
+                                    .name("params[orig_url]")
+                                    .value(move || orig_url())
                             },
                             {
                                 button()
@@ -108,7 +127,7 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                                     .class("btn btn-primary")
                                     .child(t![i18n, login])
                             },
-                            { div().class("mt-2").child( move || message() ) },
+                            { div().class("mt-2").child(move || message()) },
                         )
                     }))
                     .build(),
@@ -126,9 +145,10 @@ pub struct LoginServerResponse {
 }
 
 #[server]
-pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnError> {
+pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, ServerFnError> {
     use crate::model::user::Language;
     use bcrypt::verify;
+    use leptos_actix::redirect;
     use sqlx::query;
     use sqlx::{Pool, Postgres};
 
@@ -144,7 +164,7 @@ pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnEr
                 FROM account
                 WHERE username = $1
             "#,
-        creds.username
+        params.username
     )
     .fetch_optional(&db_pool)
     .await;
@@ -155,7 +175,7 @@ pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnEr
                 error = "Invalid username or password".to_string();
             }
             Some(account_row_record) => {
-                if !verify(&creds.password, &account_row_record.pw_hash).unwrap() {
+                if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
                     error = "Invalid username or password".to_string();
                 } else {
                     name = account_row_record.name;
@@ -172,6 +192,7 @@ pub async fn login(creds: Credentials) -> Result<LoginServerResponse, ServerFnEr
                         Ok(session_row_record) => {
                             expires_at = session_row_record.expires_at.as_utc().unix_timestamp();
                             session_id = session_row_record.id.to_string();
+                            redirect(params.orig_url.as_str());
                         }
                         Err(_) => {
                             error = "Error creating session".to_string();

@@ -9,5 +9,9 @@
   "login": "Anmelden",
   "loginIntro": "Bitte melden Sie sich an",
   "username": "Benutzername",
-  "password": "Passwort"
+  "password": "Passwort",
+  "loading": "Warten auf Serverantwort...",
+  "invalidCredentials": "Ungültiger Benutzername oder Passwort",
+  "serverError": "Server Fehler: {{ error }}",
+  "redirecting": "Weiterleitung ..."
 }
