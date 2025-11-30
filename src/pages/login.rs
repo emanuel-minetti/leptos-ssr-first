@@ -1,6 +1,6 @@
 use crate::i18n::*;
-use crate::model::user::User;
 use crate::model::language::Language;
+use crate::model::user::User;
 use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;

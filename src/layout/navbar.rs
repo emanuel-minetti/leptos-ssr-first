@@ -62,24 +62,20 @@ pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
                                 });
                             }
                         })
-                        .child(
-                        select()
-                            .class("form-select")
-                            .child((
-                                {
-                                    option()
-                                        .value("en")
-                                        .selected(move || lang.get() == "en")
-                                        .child(t![i18n, english])
-                                },
-                                {
-                                    option()
-                                        .value("de")
-                                        .selected(move || lang.get() == "de")
-                                        .child(t![i18n, german])
-                                },
-                            )),
-                    )
+                        .child(select().class("form-select").child((
+                            {
+                                option()
+                                    .value("en")
+                                    .selected(move || lang.get() == "en")
+                                    .child(t![i18n, english])
+                            },
+                            {
+                                option()
+                                    .value("de")
+                                    .selected(move || lang.get() == "de")
+                                    .child(t![i18n, german])
+                            },
+                        )))
                 },
             )),
     )
