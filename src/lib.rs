@@ -2,6 +2,7 @@ pub mod app;
 pub mod layout;
 pub mod pages;
 pub mod model;
+pub mod utils;
 
 include!(concat!(env!("OUT_DIR"), "/i18n/mod.rs"));
 

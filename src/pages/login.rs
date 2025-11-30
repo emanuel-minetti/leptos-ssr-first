@@ -1,5 +1,7 @@
 use crate::i18n::*;
-use crate::model::user::{Language, User};
+use crate::model::user::User;
+use crate::model::language::Language;
+use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
@@ -16,7 +18,10 @@ pub struct LoginCallParams {
 }
 
 #[component]
-pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
+pub fn Login(
+    set_user: WriteSignal<Option<User>>,
+    lang_setter: WriteSignal<String>,
+) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
     let orig_url = move || {
@@ -25,6 +30,7 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
             .get("orig_url")
             .expect("orig_url missing from query")
     };
+    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
     let message = move || match login.value().get() {
         None => {
             if login.pending().get() {
@@ -46,10 +52,16 @@ pub fn Login(set_user: WriteSignal<Option<User>>) -> impl IntoView {
                 if response.error.is_empty() {
                     set_user.set(Some(User {
                         name: response.name,
-                        lang: response.preferred_language.to_string(),
                         token: response.session_id,
                         expires: response.expires_at,
                     }));
+                    //set lang (in cookie, local storage, context) if applicable
+                    if response.preferred_language.to_string() != lang.get().as_str() {
+                        let new_lang = response.preferred_language.to_string();
+                        lang_setter.set(new_lang.clone());
+                        set_lang_to_locale_storage(new_lang.clone());
+                        set_lang_to_i18n(new_lang);
+                    }
                     div()
                         .class("alert alert-success")
                         .child(t!(i18n, redirecting))
@@ -146,7 +158,6 @@ pub struct LoginServerResponse {
 
 #[server]
 pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, ServerFnError> {
-    use crate::model::user::Language;
     use bcrypt::verify;
     use leptos_actix::redirect;
     use sqlx::query;

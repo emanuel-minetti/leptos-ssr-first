@@ -1,5 +1,6 @@
-use crate::i18n::{t, use_i18n, Locale};
+use crate::i18n::{t, use_i18n};
 use crate::model::user::User;
+use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage};
 use leptos::ev;
 use leptos::html::*;
 use leptos::prelude::*;
@@ -35,6 +36,7 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                                 lang_setter.set(option_value.clone());
                                 set_lang_to_locale_storage(option_value.clone());
                                 set_lang_to_i18n(option_value);
+                                //TODO set lang to server if applicable
                             })
                             .child(({ option().value("en").child(t![i18n, english]) }, {
                                 option().value("de").child(t![i18n, german])
@@ -56,22 +58,4 @@ fn NavBarLoginInfo() -> impl IntoView {
             Some(user) => t![i18n, loggedInAs, name = user.name].into_any(),
         }
     }))
-}
-
-fn set_lang_to_i18n(lang: String) {
-    let i18n = use_i18n();
-    if lang == "de" {
-        i18n.set_locale(Locale::de);
-    } else {
-        i18n.set_locale(Locale::en);
-    }
-}
-
-fn set_lang_to_locale_storage(lang: String) {
-    let window = web_sys::window().expect("no global `window` exists");
-    let local_storage = window
-        .local_storage()
-        .expect("no global storage exists")
-        .unwrap();
-    local_storage.set_item("lang", &lang).unwrap();
 }
