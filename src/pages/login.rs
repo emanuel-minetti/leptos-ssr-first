@@ -20,7 +20,7 @@ pub struct LoginCallParams {
 #[component]
 pub fn Login(
     set_user: WriteSignal<Option<User>>,
-    lang_setter: WriteSignal<String>,
+    lang_setter: WriteSignal<&'static str>,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
@@ -30,7 +30,7 @@ pub fn Login(
             .get("orig_url")
             .expect("orig_url missing from query")
     };
-    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
+    let lang = use_context::<ReadSignal<&str>>().expect("lang missing from context");
     let message = move || match login.value().get() {
         None => {
             if login.pending().get() {
@@ -56,10 +56,10 @@ pub fn Login(
                         expires: response.expires_at,
                     }));
                     //set lang (in cookie, local storage, context) if applicable
-                    if response.preferred_language.to_string() != lang.get().as_str() {
-                        let new_lang = response.preferred_language.to_string();
-                        lang_setter.set(new_lang.clone());
-                        set_lang_to_locale_storage(new_lang.clone());
+                    if response.preferred_language.to_string() != lang.get() {
+                        let new_lang = response.preferred_language.into();
+                        lang_setter.set(new_lang);
+                        set_lang_to_locale_storage(new_lang);
                         set_lang_to_i18n(new_lang);
                     }
                     div()
