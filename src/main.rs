@@ -8,7 +8,7 @@ async fn main() -> std::io::Result<()> {
     use actix_web::*;
     use leptos::config::get_configuration;
     use leptos::prelude::*;
-    use leptos_actix::handle_server_fns_with_context;
+    //use leptos_actix::handle_server_fns_with_context;
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_meta::MetaTags;
     use leptos_ssr_first::app::*;
@@ -31,17 +31,17 @@ async fn main() -> std::io::Result<()> {
         let leptos_options = &conf.leptos_options;
         let site_root = leptos_options.site_root.clone().to_string();
         let db_pool_clone = db_pool.clone();
-        let db_pool_clone2 = db_pool.clone();
+        //let db_pool_clone2 = db_pool.clone();
 
         println!("listening on http://{}", &addr);
 
         App::new()
             //LSF CODE
             .app_data(Data::new(db_pool_clone.clone()))
-            .route(
-                "/api/{tail:.*}",
-                handle_server_fns_with_context(move || provide_context(db_pool_clone.clone())),
-            )
+            // .route(
+            //     "/api/{tail:.*}",
+            //     handle_server_fns_with_context(move || provide_context(db_pool_clone.clone())),
+            // )
             //LSF CODE END
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
@@ -49,7 +49,7 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/assets", &site_root))
             // serve the favicon from /favicon.ico
             .service(favicon)
-            .leptos_routes_with_context(routes, move || provide_context(db_pool_clone2.clone()), {
+            .leptos_routes_with_context(routes, move || provide_context(db_pool_clone.clone()), {
                 let leptos_options = leptos_options.clone();
                 move || {
                     view! {

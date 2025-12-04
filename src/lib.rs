@@ -3,6 +3,10 @@ pub mod layout;
 pub mod pages;
 pub mod model;
 pub mod utils;
+pub mod client;
+#[cfg(feature = "ssr")]
+pub mod middleware;
+
 
 include!(concat!(env!("OUT_DIR"), "/i18n/mod.rs"));
 
