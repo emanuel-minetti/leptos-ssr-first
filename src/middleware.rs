@@ -3,7 +3,6 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::Error;
 use std::future::{ready, Ready};
 use std::rc::Rc;
-use std::task::{Context, Poll};
 use futures_util::future::LocalBoxFuture;
 
 //TODO rewrite as leptos middleware
