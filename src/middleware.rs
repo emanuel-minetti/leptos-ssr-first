@@ -1,6 +1,4 @@
-use server_fn::middleware::{BoxedService, Layer, Service};
-use http::Request;
-use leptos::html::Body;
+use server_fn::middleware::{BoxedService, Layer};
 
 pub struct AuthorisationLayer;
 

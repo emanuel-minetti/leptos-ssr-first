@@ -23,7 +23,6 @@ serde = { version = "1.0.228", features = ["derive"] }
 bcrypt = "0.17.1"
 getrandom = {version = "0.3.4", features = ["wasm_js"]}
 futures-util = "0.3.31"
-http = "1.4"
 
 [build-dependencies]
 leptos_i18n_build = "0.6.0-rc.2"
