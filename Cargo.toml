@@ -50,7 +50,7 @@ ssr = [
   "sqlx/runtime-tokio",
   "sqlx/uuid",
   "sqlx/time",
-  "getrandom/wasm_js"
+  "getrandom/wasm_js",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

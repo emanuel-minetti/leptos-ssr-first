@@ -100,7 +100,6 @@ fn NavBarLoginInfo() -> impl IntoView {
 }
 
 #[server(client = crate::client::AddAuthHeaderClient)]
-#[middleware(crate::middleware::AuthorisationLayer)]
 pub async fn set_lang(lang: Language, session_id: String) -> Result<(), ServerFnError> {
     use leptos::logging::log;
 
