@@ -45,12 +45,18 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // to use it in the closure for async function calls
         let srv = self.service.clone();
-        println!("Middleware called before server fn");
+        // grab url path from request to care for 'login'
+        let url_path = req.path().split("/").last().unwrap().to_owned();
+        if !url_path.starts_with("login") {
+            println!("Middleware called before server fn");
+        }
         Box::pin(async move {
             //call other middleware and handler and get the response
             let res = srv.call(req).await?;
             let _request = res.request().clone();
-            println!("Middleware called after server fn");
+            if !url_path.starts_with("login") {
+                println!("Middleware called after server fn");
+            }
             Ok(res.map_into_left_body())
         })
 
