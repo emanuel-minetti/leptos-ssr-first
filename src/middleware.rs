@@ -1,6 +1,6 @@
 use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
-use actix_web::Error;
+use actix_web::{Error, HttpMessage};
 use std::future::{ready, Ready};
 use std::rc::Rc;
 use futures_util::future::LocalBoxFuture;
@@ -49,6 +49,7 @@ where
         let url_path = req.path().split("/").last().unwrap().to_owned();
         if !url_path.starts_with("login") {
             println!("Middleware called before server fn");
+            req.extensions_mut().insert("Hallo".to_string());
         }
         Box::pin(async move {
             //call other middleware and handler and get the response

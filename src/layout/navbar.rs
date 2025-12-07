@@ -102,9 +102,15 @@ fn NavBarLoginInfo() -> impl IntoView {
 #[server(client = crate::client::AddAuthHeaderClient)]
 pub async fn set_lang(lang: Language, session_id: String) -> Result<(), ServerFnError> {
     use leptos::logging::log;
+    use leptos_actix::extract;
+    use actix_web::HttpMessage;
+
 
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
     log!("called with lang: {} and session_id: {}", lang, session_id);
+    let req: actix_web::HttpRequest = extract().await?;
+    // let middle_ware_context = use_context::<String>();
+    log!("middleware context: {:?}", req.extensions_mut().get::<String>());
     //set lang in db
     let _ = query!(
         r#"UPDATE account
