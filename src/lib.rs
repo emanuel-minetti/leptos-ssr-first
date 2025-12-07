@@ -6,7 +6,7 @@ pub mod utils;
 pub mod client;
 #[cfg(feature = "ssr")]
 pub mod middleware;
-
+pub mod api;
 
 include!(concat!(env!("OUT_DIR"), "/i18n/mod.rs"));
 

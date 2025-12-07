@@ -57,7 +57,9 @@ pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
                                 if user.get().is_some() {
                                     let lang: Language = lang.get().into();
                                     // using unwrap here because we know user is Some
-                                    let token = user.get().unwrap().token;
+                                    // TODO adjust!
+                                    //let token = user.get().unwrap().token;
+                                    let token = "";
                                     spawn_local(async {
                                         set_lang(lang, token.into())
                                             .await

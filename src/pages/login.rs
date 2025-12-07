@@ -1,14 +1,17 @@
 use crate::i18n::*;
 use crate::model::language::Language;
 use crate::model::user::User;
-use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage, set_to_session_storage};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
 use leptos::prelude::*;
 use leptos::{component, server, IntoView};
+use leptos::reactive::spawn_local;
 use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
+use crate::api::error::ApiError;
+use crate::api::response::ApiResponse;
+use crate::utils::set_to_session_storage;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
@@ -49,31 +52,40 @@ pub fn Login(
         }
         Some(result) => match result {
             Ok(response) => {
-                if response.error.is_empty() {
-                    set_user.set(Some(User {
-                        name: response.name,
-                        token: response.session_id.clone(),
-                        expires: response.expires_at,
-                    }));
+                if response.error.is_none() {
+                    // TODO get user from server
+                    // let mut user: User = User::default();
+                    // move || {
+                    //     spawn_local(async {
+                    //         user = get_user().await;
+                    //     });
+                    // };
+                    //
+
+                    // set_user.set(Some(User {
+                    //     name: response.name,
+                    //     token: response.session_id.clone(),
+                    //     expires: response.expires_at,
+                    // }));
                     // set lang (in cookie, local storage, context) if applicable
-                    if response.preferred_language.to_string() != lang.get() {
-                        let new_lang = response.preferred_language.into();
-                        lang_setter.set(new_lang);
-                        set_lang_to_locale_storage(new_lang);
-                        set_lang_to_i18n(new_lang);
-                    }
+                    // if response.preferred_language.to_string() != lang.get() {
+                    //     let new_lang = response.preferred_language.into();
+                    //     lang_setter.set(new_lang);
+                    //     set_lang_to_locale_storage(new_lang);
+                    //     set_lang_to_i18n(new_lang);
+                    // }
                     // set expires and token to session storage
-                    set_to_session_storage("token", response.session_id.as_str());
+                    set_to_session_storage("token", response.token.as_str());
                     set_to_session_storage("expires", response.expires_at.to_string().as_str());
                     div()
                         .class("alert alert-success")
                         .child(t!(i18n, redirecting))
                         .into_any()
                 } else {
-                    let error_message = if response.error == "Invalid username or password" {
+                    let error_message = if response.error.clone().unwrap().to_string() == "Invalid username or password" {
                         t!(i18n, invalidCredentials).into_any()
                     } else {
-                        t!(i18n, serverError, error = response.error).into_any()
+                        t!(i18n, serverError, error = response.error.unwrap().to_string()).into_any()
                     };
                     div()
                         .class("alert alert-danger")
@@ -150,14 +162,7 @@ pub fn Login(
         }))
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
-pub struct LoginServerResponse {
-    expires_at: i64,
-    session_id: String,
-    name: String,
-    preferred_language: Language,
-    error: String,
-}
+pub type LoginServerResponse = ApiResponse<()>;
 
 #[server]
 pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, ServerFnError> {
@@ -168,10 +173,11 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
 
     let mut name = "".to_string();
     let mut preferred_lang = Language::default();
-    let mut error = "".to_string();
+    let mut error:Option<ApiError> = None;
     let mut expires_at = 0;
     let mut session_id = "".to_string();
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
+
     let account_row_result = query!(
         r#"
                 SELECT name, pw_hash, id, preferred_language as "preferred_language: Language"
@@ -186,11 +192,11 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
     match account_row_result {
         Ok(account_row) => match account_row {
             None => {
-                error = "Invalid username or password".to_string();
+                error = Some(ApiError::InvalidCredentials);
             }
             Some(account_row_record) => {
                 if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
-                    error = "Invalid username or password".to_string();
+                    error = Some(ApiError::InvalidCredentials);
                 } else {
                     name = account_row_record.name;
                     preferred_lang = account_row_record.preferred_language;
@@ -206,23 +212,37 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
                             session_id = session_row_record.id.to_string();
                             redirect(params.orig_url.as_str());
                         }
-                        Err(_) => {
-                            error = "Error creating session".to_string();
+                        Err(err) => {
+                            error = Some(ApiError::DbError(err.to_string()));
                         }
                     }
                 }
             }
         },
         Err(_) => {
-            error = "No DB connection at 'login'".to_string();
+            error = Some(ApiError::DBConnectionError);
         }
     }
 
     Ok(LoginServerResponse {
-        name,
-        preferred_language: preferred_lang,
-        error,
+        error: None,
         expires_at,
-        session_id,
+        token: session_id,
+        data: (),
+    })
+}
+
+#[server(client = crate::client::AddAuthHeaderClient)]
+pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
+    Ok(ApiResponse {
+        expires_at: 0,
+        token: "".to_string(),
+        error: None,
+        data: {
+            User {
+                name: "".to_string(),
+                preferred_language: "".to_string(),
+            }
+        },
     })
 }
