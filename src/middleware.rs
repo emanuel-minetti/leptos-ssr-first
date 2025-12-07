@@ -49,7 +49,17 @@ where
         let url_path = req.path().split("/").last().unwrap().to_owned();
         if !url_path.starts_with("login") {
             println!("Middleware called before server fn");
-            req.extensions_mut().insert("Hallo".to_string());
+            let auth_header = match req.headers().get("Authorization") {
+                None => {"None".to_string()}
+                Some(header_value) => {
+                    if header_value.is_empty() {
+                        "Empty".to_string()
+                    }
+                    else { header_value.to_owned().to_str().unwrap().to_string() }
+                }
+            };
+            // let auth_header = req.headers().get("Authorization");
+            req.extensions_mut().insert(auth_header);
         }
         Box::pin(async move {
             //call other middleware and handler and get the response
