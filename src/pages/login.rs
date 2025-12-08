@@ -1,17 +1,20 @@
+use std::str::FromStr;
+use crate::api::error::ApiError;
+use crate::api::response::ApiResponse;
 use crate::i18n::*;
 use crate::model::language::Language;
 use crate::model::user::User;
+use crate::utils::{set_login_data_to_session_storage};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
 use leptos::prelude::*;
-use leptos::{component, server, IntoView};
 use leptos::reactive::spawn_local;
+use leptos::{component, server, IntoView};
+use leptos::leptos_dom::log;
 use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
-use crate::api::error::ApiError;
-use crate::api::response::ApiResponse;
-use crate::utils::set_to_session_storage;
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
@@ -54,13 +57,18 @@ pub fn Login(
             Ok(response) => {
                 if response.error.is_none() {
                     // TODO get user from server
-                    // let mut user: User = User::default();
-                    // move || {
-                    //     spawn_local(async {
-                    //         user = get_user().await;
-                    //     });
-                    // };
-                    //
+                    set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
+
+                    spawn_local(async move {
+                        let user = match get_user().await {
+                            Ok(res) => Some(User {
+                                name: res.data.name.to_string().clone(),
+                                preferred_language: res.data.preferred_language.to_string().clone(),
+                            }),
+                            Err(_) => None,
+                        };
+                        set_user.set(user);
+                    });
 
                     // set_user.set(Some(User {
                     //     name: response.name,
@@ -75,17 +83,24 @@ pub fn Login(
                     //     set_lang_to_i18n(new_lang);
                     // }
                     // set expires and token to session storage
-                    set_to_session_storage("token", response.token.as_str());
-                    set_to_session_storage("expires", response.expires_at.to_string().as_str());
+                    // set_to_session_storage("token", response.token.as_str());
+                    // set_to_session_storage("expires", response.expires_at.to_string().as_str());
                     div()
                         .class("alert alert-success")
                         .child(t!(i18n, redirecting))
                         .into_any()
                 } else {
-                    let error_message = if response.error.clone().unwrap().to_string() == "Invalid username or password" {
+                    let error_message = if response.error.clone().unwrap().to_string()
+                        == "Invalid username or password"
+                    {
                         t!(i18n, invalidCredentials).into_any()
                     } else {
-                        t!(i18n, serverError, error = response.error.unwrap().to_string()).into_any()
+                        t!(
+                            i18n,
+                            serverError,
+                            error = response.error.unwrap().to_string()
+                        )
+                        .into_any()
                     };
                     div()
                         .class("alert alert-danger")
@@ -171,16 +186,14 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
     use sqlx::query;
     use sqlx::{Pool, Postgres};
 
-    let mut name = "".to_string();
-    let mut preferred_lang = Language::default();
-    let mut error:Option<ApiError> = None;
+    let mut error: Option<ApiError> = None;
     let mut expires_at = 0;
     let mut session_id = "".to_string();
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
 
     let account_row_result = query!(
         r#"
-                SELECT name, pw_hash, id, preferred_language as "preferred_language: Language"
+                SELECT pw_hash, id
                 FROM account
                 WHERE username = $1
             "#,
@@ -198,8 +211,6 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
                 if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
                     error = Some(ApiError::InvalidCredentials);
                 } else {
-                    name = account_row_record.name;
-                    preferred_lang = account_row_record.preferred_language;
                     let session_row = query!(
                         r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
                         account_row_record.id
@@ -234,14 +245,31 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
 
 #[server(client = crate::client::AddAuthHeaderClient)]
 pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
+    use actix_web::HttpMessage;
+    use leptos_actix::extract;
+    use sqlx::query;
+    use sqlx::types::Uuid;
+    use sqlx::{Pool, Postgres};
+
+    let req: actix_web::HttpRequest = extract().await?;
+    log!("middleware context: {:?}", req.extensions_mut().get::<String>().unwrap());
+    let session_id = req.extensions_mut().get::<String>().unwrap().to_string();
+    let user_row_result = query!(
+        r#"
+            SELECT name, preferred_language as "preferred_language: Language"
+            FROM account a
+                JOIN session s ON a.id = s.account_id
+            WHERE s.id = $1
+        "#, Uuid::from_str(&session_id).unwrap());
+    let user_row = user_row_result.fetch_one(&use_context::<Pool<Postgres>>().unwrap()).await?;
     Ok(ApiResponse {
         expires_at: 0,
         token: "".to_string(),
         error: None,
         data: {
             User {
-                name: "".to_string(),
-                preferred_language: "".to_string(),
+                name: user_row.name,
+                preferred_language: user_row.preferred_language.to_string(),
             }
         },
     })

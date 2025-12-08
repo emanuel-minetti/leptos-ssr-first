@@ -18,8 +18,9 @@ where
     type Response = BrowserResponse;
 
     fn send(req: Self::Request) -> impl Future<Output=Result<Self::Response, E>> + Send {
+        let (token, _) = crate::utils::get_login_data_from_session_storage();
         let headers = req.headers();
-        headers.append("Authorization", "Bearer ");
+        headers.append("Authorization", format!("Bearer {}", token.as_str()).as_str());
         <BrowserClient as Client<E, IS, OS>>::send(req)
     }
 
