@@ -1,20 +1,19 @@
-use std::str::FromStr;
 use crate::api::error::ApiError;
 use crate::api::response::ApiResponse;
 use crate::i18n::*;
 use crate::model::language::Language;
 use crate::model::user::User;
-use crate::utils::{set_login_data_to_session_storage};
+use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
+use leptos::leptos_dom::log;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos::{component, server, IntoView};
-use leptos::leptos_dom::log;
 use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
-
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
@@ -26,93 +25,88 @@ pub struct LoginCallParams {
 #[component]
 pub fn Login(
     set_user: WriteSignal<Option<User>>,
-    lang_setter: WriteSignal<&'static str>,
+    lang_setter: WriteSignal<String>,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
-    let lang = use_context::<ReadSignal<&str>>().expect("lang missing from context");
+    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
     let orig_url = move || {
         use_query_map()
             .get()
             .get("orig_url")
             .expect("orig_url missing from query")
     };
-    let message = move || match login.value().get() {
-        None => {
-            if login.pending().get() {
-                div()
-                    .class("text-center")
-                    .child(
-                        div()
-                            .class("spinner-border")
-                            .role("status")
-                            .child(span().class("visually-hidden").child(t!(i18n, loading))),
-                    )
-                    .into_any()
-            } else {
-                div().hidden(true).into_any()
-            }
-        }
-        Some(result) => match result {
-            Ok(response) => {
-                if response.error.is_none() {
-                    // TODO get user from server
-                    set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
-
-                    spawn_local(async move {
-                        let user = match get_user().await {
-                            Ok(res) => Some(User {
-                                name: res.data.name.to_string().clone(),
-                                preferred_language: res.data.preferred_language.to_string().clone(),
-                            }),
-                            Err(_) => None,
-                        };
-                        set_user.set(user);
-                    });
-
-                    // set_user.set(Some(User {
-                    //     name: response.name,
-                    //     token: response.session_id.clone(),
-                    //     expires: response.expires_at,
-                    // }));
-                    // set lang (in cookie, local storage, context) if applicable
-                    // if response.preferred_language.to_string() != lang.get() {
-                    //     let new_lang = response.preferred_language.into();
-                    //     lang_setter.set(new_lang);
-                    //     set_lang_to_locale_storage(new_lang);
-                    //     set_lang_to_i18n(new_lang);
-                    // }
-                    // set expires and token to session storage
-                    // set_to_session_storage("token", response.token.as_str());
-                    // set_to_session_storage("expires", response.expires_at.to_string().as_str());
+    let message = move || {
+        match login.value().get() {
+            None => {
+                if login.pending().get() {
                     div()
-                        .class("alert alert-success")
-                        .child(t!(i18n, redirecting))
+                        .class("text-center")
+                        .child(
+                            div()
+                                .class("spinner-border")
+                                .role("status")
+                                .child(span().class("visually-hidden").child(t!(i18n, loading))),
+                        )
                         .into_any()
                 } else {
-                    let error_message = if response.error.clone().unwrap().to_string()
-                        == "Invalid username or password"
-                    {
-                        t!(i18n, invalidCredentials).into_any()
+                    div().hidden(true).into_any()
+                }
+            }
+            Some(result) => match result {
+                Ok(response) => {
+                    if response.error.is_none() {
+                        set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
+                        spawn_local(async move {
+                            let user = match get_user().await {
+                                Ok(res) => {
+                                    let server_lang = res.data.preferred_language;
+                                    // set lang (in cookie, local storage, context) if applicable
+                                    //TODO issues warning in browser console. Investigate!
+                                    if server_lang != lang.get() {
+                                        lang_setter.set(server_lang.clone());
+                                        set_lang_to_locale_storage(&server_lang);
+                                        set_lang_to_i18n(&server_lang);
+                                    }
+
+                                    Some(User {
+                                    name: res.data.name.to_string().clone(),
+                                    preferred_language: server_lang.to_string(),
+                                })},
+                                Err(_) => None,
+                            };
+                            set_user.set(user);
+                        });
+
+                        div()
+                            .class("alert alert-success")
+                            .child(t!(i18n, redirecting))
+                            .into_any()
                     } else {
-                        t!(
+                        let error_message = if response.error.clone().unwrap().to_string()
+                            == "Invalid username or password"
+                        {
+                            t!(i18n, invalidCredentials).into_any()
+                        } else {
+                            t!(
                             i18n,
                             serverError,
                             error = response.error.unwrap().to_string()
                         )
-                        .into_any()
-                    };
-                    div()
-                        .class("alert alert-danger")
-                        .child(error_message)
-                        .into_any()
+                                .into_any()
+                        };
+                        div()
+                            .class("alert alert-danger")
+                            .child(error_message)
+                            .into_any()
+                    }
                 }
-            }
-            Err(err) => div()
-                .class("alert alert-danger")
-                .child(t!(i18n, serverError, error = err.to_string()))
-                .into_any(),
-        },
+                Err(err) => div()
+                    .class("alert alert-danger")
+                    .child(t!(i18n, serverError, error = err.to_string()))
+                    .into_any(),
+            },
+        }
     };
 
     div()
@@ -150,7 +144,7 @@ pub fn Login(
                                     },
                                     {
                                         input()
-                                            .r#type("text")
+                                            .r#type("password")
                                             .class("form-control")
                                             .id("ref2")
                                             .name("params[password]")
@@ -252,7 +246,10 @@ pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
     use sqlx::{Pool, Postgres};
 
     let req: actix_web::HttpRequest = extract().await?;
-    log!("middleware context: {:?}", req.extensions_mut().get::<String>().unwrap());
+    log!(
+        "middleware context: {:?}",
+        req.extensions_mut().get::<String>().unwrap()
+    );
     let session_id = req.extensions_mut().get::<String>().unwrap().to_string();
     let user_row_result = query!(
         r#"
@@ -260,8 +257,12 @@ pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
             FROM account a
                 JOIN session s ON a.id = s.account_id
             WHERE s.id = $1
-        "#, Uuid::from_str(&session_id).unwrap());
-    let user_row = user_row_result.fetch_one(&use_context::<Pool<Postgres>>().unwrap()).await?;
+        "#,
+        Uuid::from_str(&session_id).unwrap()
+    );
+    let user_row = user_row_result
+        .fetch_one(&use_context::<Pool<Postgres>>().unwrap())
+        .await?;
     Ok(ApiResponse {
         expires_at: 0,
         token: "".to_string(),

@@ -17,9 +17,9 @@ use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlSelectElement};
 
 #[component]
-pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
+pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
     let user = use_context::<ReadSignal<Option<User>>>().expect("no user specified in context");
-    let lang = use_context::<ReadSignal<&str>>().expect("lang missing from context");
+    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
     let i18n = use_i18n();
 
     nav().class("navbar bg-body-tertiary").child(
@@ -50,7 +50,7 @@ pub fn NavBar(lang_setter: WriteSignal<&'static str>) -> impl IntoView {
                                 } else {
                                     "de"
                                 };
-                                lang_setter.set(option_value);
+                                lang_setter.set(option_value.to_string());
                                 set_lang_to_locale_storage(&option_value);
                                 set_lang_to_i18n(&option_value);
                                 // set lang to server if applicable

@@ -35,7 +35,7 @@ pub fn App() -> impl IntoView {
     i18n_signal.set_locale(Locale::en);
 
     // initializing the global value lang needed by non login pages
-    let (lang, set_lang) = signal("en");
+    let (lang, set_lang) = signal("en".to_string());
 
     let browser_lang = move || get_lang_from_browser();
 
@@ -49,10 +49,10 @@ pub fn App() -> impl IntoView {
             };
             let i18n = use_i18n();
             if browser_lang == "de" {
-                set_lang.set(browser_lang);
+                set_lang.set(browser_lang.to_string());
                 i18n.set_locale(Locale::de);
             } else {
-                set_lang.set("en");
+                set_lang.set("en".to_string());
                 i18n.set_locale(Locale::en);
             }
         }
