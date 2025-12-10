@@ -3,7 +3,9 @@ use crate::api::response::ApiResponse;
 use crate::i18n::*;
 use crate::model::language::Language;
 use crate::model::user::User;
-use crate::utils::{set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage};
+use crate::utils::{
+    set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage,
+};
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
@@ -34,78 +36,76 @@ pub fn Login(
         use_query_map()
             .get()
             .get("orig_url")
-            .expect("orig_url missing from query")
+            .unwrap_or_else(|| "/".to_string())
     };
+
+    Effect::new(move || {
+        if let Some(Ok(response)) = login.value().get() {
+            if response.error.is_none() {
+                set_login_data_to_session_storage(
+                    response.token.as_str(),
+                    response.expires_at,
+                );
+                spawn_local( async move {
+                    if let Ok(res) = get_user().await {
+                        let server_lang = res.data.preferred_language;
+                        //TODO issues warning in browser console. Maybe use Memo!
+                        if server_lang != lang.get() {
+                            lang_setter.set(server_lang.clone());
+                            set_lang_to_locale_storage(&server_lang);
+                            set_lang_to_i18n(&server_lang);
+                        }
+                        set_user.set(Some(User {
+                            name: res.data.name,
+                            preferred_language: server_lang,
+                        }));
+                    }
+                })
+            }
+        }
+    });
+
     let message = move || {
-        match login.value().get() {
-            None => {
-                if login.pending().get() {
+        let value = login.value().get();
+        let pending = login.pending().get();
+
+        if pending {
+            return div()
+                .class("text-center")
+                .child(
                     div()
-                        .class("text-center")
-                        .child(
-                            div()
-                                .class("spinner-border")
-                                .role("status")
-                                .child(span().class("visually-hidden").child(t!(i18n, loading))),
-                        )
+                        .class("spinner-border")
+                        .role("status")
+                        .child(span().class("visually-hidden").child(t!(i18n, loading))),
+                )
+                .into_any();
+        }
+
+        match value {
+            Some(Ok(response)) => {
+                if response.error.is_none() {
+                    return div()
+                        .class("alert alert-success")
+                        .child(t!(i18n, redirecting))
                         .into_any()
                 } else {
-                    div().hidden(true).into_any()
+                    let err_str = response.error.unwrap().to_string();
+                    let error_message = if err_str == "Invalid username or password" {
+                        t!(i18n, invalidCredentials).into_any()
+                    } else {
+                        t!(i18n, serverError, error = err_str).into_any()
+                    };
+                    div()
+                        .class("alert alert-danger")
+                        .child(error_message)
+                        .into_any()
                 }
             }
-            Some(result) => match result {
-                Ok(response) => {
-                    if response.error.is_none() {
-                        set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
-                        spawn_local(async move {
-                            let user = match get_user().await {
-                                Ok(res) => {
-                                    let server_lang = res.data.preferred_language;
-                                    // set lang (in cookie, local storage, context) if applicable
-                                    //TODO issues warning in browser console. Investigate!
-                                    if server_lang != lang.get() {
-                                        lang_setter.set(server_lang.clone());
-                                        set_lang_to_locale_storage(&server_lang);
-                                        set_lang_to_i18n(&server_lang);
-                                    }
-
-                                    Some(User {
-                                    name: res.data.name.to_string().clone(),
-                                    preferred_language: server_lang.to_string(),
-                                })},
-                                Err(_) => None,
-                            };
-                            set_user.set(user);
-                        });
-
-                        div()
-                            .class("alert alert-success")
-                            .child(t!(i18n, redirecting))
-                            .into_any()
-                    } else {
-                        let error_message = if response.error.clone().unwrap().to_string()
-                            == "Invalid username or password"
-                        {
-                            t!(i18n, invalidCredentials).into_any()
-                        } else {
-                            t!(
-                            i18n,
-                            serverError,
-                            error = response.error.unwrap().to_string()
-                        )
-                                .into_any()
-                        };
-                        div()
-                            .class("alert alert-danger")
-                            .child(error_message)
-                            .into_any()
-                    }
-                }
-                Err(err) => div()
-                    .class("alert alert-danger")
-                    .child(t!(i18n, serverError, error = err.to_string()))
-                    .into_any(),
-            },
+            Some(Err(err)) => div()
+                .class("alert alert-danger")
+                .child(t!(i18n, serverError, error = err.to_string()))
+                .into_any(),
+            None => div().hidden(true).into_any(),
         }
     };
 
