@@ -46,11 +46,13 @@ pub fn Login(
                     response.token.as_str(),
                     response.expires_at,
                 );
+
                 spawn_local( async move {
                     if let Ok(res) = get_user().await {
                         let server_lang = res.data.preferred_language;
-                        //TODO issues warning in browser console. Maybe use Memo!
-                        if server_lang != lang.get() {
+                        // shouldn't be rerun on changes of lang
+                        let user_lang = lang.get_untracked();
+                        if server_lang != user_lang {
                             lang_setter.set(server_lang.clone());
                             set_lang_to_locale_storage(&server_lang);
                             set_lang_to_i18n(&server_lang);
