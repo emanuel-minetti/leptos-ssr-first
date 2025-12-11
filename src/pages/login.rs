@@ -32,14 +32,16 @@ pub fn Login(
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
     let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
-    let orig_url = move || {
+    let orig_url =
         use_query_map()
-            .get()
+            .get_untracked()
             .get("orig_url")
             .unwrap_or_else(|| "/".to_string())
-    };
+        ;
+    let orig_url_clone = orig_url.clone();
 
     Effect::new(move || {
+        let orig_url_clone = orig_url.clone();
         if let Some(Ok(response)) = login.value().get() {
             if response.error.is_none() {
                 set_login_data_to_session_storage(
@@ -48,7 +50,7 @@ pub fn Login(
                 );
 
                 spawn_local( async move {
-                    if let Ok(res) = get_user().await {
+                    if let Ok(res) = get_user(orig_url_clone).await {
                         let server_lang = res.data.preferred_language;
                         // shouldn't be rerun on changes of lang
                         let user_lang = lang.get_untracked();
@@ -157,7 +159,7 @@ pub fn Login(
                                 input()
                                     .r#type("hidden")
                                     .name("params[orig_url]")
-                                    .value(move || orig_url())
+                                    .value(orig_url_clone.clone())
                             },
                             {
                                 button()
@@ -173,10 +175,8 @@ pub fn Login(
         }))
 }
 
-pub type LoginServerResponse = ApiResponse<()>;
-
 #[server]
-pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, ServerFnError> {
+pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnError> {
     use bcrypt::verify;
     use leptos_actix::redirect;
     use sqlx::query;
@@ -231,8 +231,8 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
         }
     }
 
-    Ok(LoginServerResponse {
-        error: None,
+    Ok(ApiResponse {
+        error,
         expires_at,
         token: session_id,
         data: (),
@@ -240,12 +240,13 @@ pub async fn login(params: LoginCallParams) -> Result<LoginServerResponse, Serve
 }
 
 #[server(client = crate::client::AddAuthHeaderClient)]
-pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
+pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnError> {
     use actix_web::HttpMessage;
     use leptos_actix::extract;
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};
+    use leptos_actix::redirect;
 
     let req: actix_web::HttpRequest = extract().await?;
     log!(
@@ -265,6 +266,7 @@ pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
     let user_row = user_row_result
         .fetch_one(&use_context::<Pool<Postgres>>().unwrap())
         .await?;
+    redirect(orig_url.as_str());
     Ok(ApiResponse {
         expires_at: 0,
         token: "".to_string(),
@@ -275,5 +277,6 @@ pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
                 preferred_language: user_row.preferred_language.to_string(),
             }
         },
-    })
+    }
+    )
 }
