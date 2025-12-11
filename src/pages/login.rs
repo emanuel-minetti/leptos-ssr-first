@@ -52,7 +52,7 @@ pub fn Login(
                 spawn_local( async move {
                     if let Ok(res) = get_user(orig_url_clone).await {
                         let server_lang = res.data.preferred_language;
-                        // shouldn't be rerun on changes of lang
+                        // shouldn't rerun on changes of lang
                         let user_lang = lang.get_untracked();
                         if server_lang != user_lang {
                             lang_setter.set(server_lang.clone());
