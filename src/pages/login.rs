@@ -1,7 +1,5 @@
-use crate::api::error::ApiError;
 use crate::api::response::ApiResponse;
 use crate::i18n::*;
-use crate::model::language::Language;
 use crate::model::user::User;
 use crate::utils::{
     set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage,
@@ -9,13 +7,11 @@ use crate::utils::{
 use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
-use leptos::leptos_dom::log;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos::{component, server, IntoView};
 use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
@@ -32,24 +28,19 @@ pub fn Login(
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
     let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
-    let orig_url =
-        use_query_map()
-            .get_untracked()
-            .get("orig_url")
-            .unwrap_or_else(|| "/".to_string())
-        ;
+    let orig_url = use_query_map()
+        .get_untracked()
+        .get("orig_url")
+        .unwrap_or_else(|| "/".to_string());
     let orig_url_clone = orig_url.clone();
 
     Effect::new(move || {
         let orig_url_clone = orig_url.clone();
         if let Some(Ok(response)) = login.value().get() {
             if response.error.is_none() {
-                set_login_data_to_session_storage(
-                    response.token.as_str(),
-                    response.expires_at,
-                );
+                set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
 
-                spawn_local( async move {
+                spawn_local(async move {
                     if let Ok(res) = get_user(orig_url_clone).await {
                         let server_lang = res.data.preferred_language;
                         // shouldn't rerun on changes of lang
@@ -91,7 +82,7 @@ pub fn Login(
                     return div()
                         .class("alert alert-success")
                         .child(t!(i18n, redirecting))
-                        .into_any()
+                        .into_any();
                 } else {
                     let err_str = response.error.unwrap().to_string();
                     let error_message = if err_str == "Invalid username or password" {
@@ -177,6 +168,7 @@ pub fn Login(
 
 #[server]
 pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnError> {
+    use crate::api::error::ApiError;
     use bcrypt::verify;
     use leptos_actix::redirect;
     use sqlx::query;
@@ -241,12 +233,15 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
 
 #[server(client = crate::client::AddAuthHeaderClient)]
 pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnError> {
+    use crate::model::language::Language;
     use actix_web::HttpMessage;
+    use leptos::leptos_dom::log;
     use leptos_actix::extract;
+    use leptos_actix::redirect;
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};
-    use leptos_actix::redirect;
+    use std::str::FromStr;
 
     let req: actix_web::HttpRequest = extract().await?;
     log!(
@@ -277,6 +272,5 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
                 preferred_language: user_row.preferred_language.to_string(),
             }
         },
-    }
-    )
+    })
 }
