@@ -13,16 +13,17 @@ async fn main() -> std::io::Result<()> {
     use leptos_actix::{generate_route_list, LeptosRoutes};
     use leptos_meta::MetaTags;
     use leptos_ssr_first::app::*;
-    use sqlx::{Pool, Postgres};
-    use leptos_ssr_first::server_utils::configuration;
     use leptos_ssr_first::server_utils::authorization::Authorisation;
+    use leptos_ssr_first::server_utils::configuration;
+    use sqlx::{Pool, Postgres};
 
     //LEPTOS CODE
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
 
     //LSF CODE
-    let configuration = configuration::get_configuration().expect("Couldn't read configuration file.");
+    let configuration =
+        configuration::get_configuration().expect("Couldn't read configuration file.");
     Logger::init(configuration.log).expect("Couldn't initialize logger");
     let db_url = configuration.database.connection_string();
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
@@ -35,18 +36,19 @@ async fn main() -> std::io::Result<()> {
         let routes = generate_route_list(App);
         let leptos_options = &conf.leptos_options;
         let site_root = leptos_options.site_root.clone().to_string();
+        //LSF CODE
         let db_pool_clone = db_pool.clone();
+        //LSF CODE END
 
         println!("listening on http://{}", &addr);
 
         App::new()
             //LSF CODE
             .app_data(Data::new(db_pool_clone.clone()))
-            .service(
-                web::scope("/api")
-                    .wrap(Authorisation)
-                    .route("/{func_name:.*}", handle_server_fns_with_context(move || provide_context(db_pool_clone.clone())))
-            )
+            .service(web::scope("/api").wrap(Authorisation).route(
+                "/{func_name:.*}",
+                handle_server_fns_with_context(move || provide_context(db_pool_clone.clone())),
+            ))
             //LSF CODE END
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))
