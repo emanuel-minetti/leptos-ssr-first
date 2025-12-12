@@ -174,7 +174,6 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     use crate::api::error::return_early;
 
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
-
     let account_row_result = query!(
         r#"
             SELECT pw_hash, id
@@ -199,7 +198,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
             }
             Some(account_row_record) => {
                 if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
-                    return_early(ApiError::InvalidCredentials);
+                    return  return_early(ApiError::InvalidCredentials);
                 }
                 let session_row = query!(
                     r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
@@ -209,6 +208,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                 .await;
                 match session_row {
                     Ok(session_row_record) => {
+                        //let session_token_ bytes =
                         Ok(ApiResponse {
                             error: None,
                             expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
@@ -217,7 +217,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                         })
                     }
                     Err(err) => {
-                        return return_early(ApiError::DbError(format!(
+                        return_early(ApiError::DbError(format!(
                             "Error inserting session: {}",
                             err.to_string()
                         )))
@@ -226,7 +226,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
             }
         },
         Err(_) => {
-            return return_early(ApiError::DBConnectionError);
+            return_early(ApiError::DBConnectionError)
         }
     }
 }

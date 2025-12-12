@@ -73,6 +73,7 @@ impl Logger {
     }
 
     pub fn init(config: LogSettings) -> Result<(), SetLoggerError> {
-        log::set_boxed_logger(Self::new(config)).map(|()| log::set_max_level(LevelFilter::Debug))
+        let max_level: LevelFilter = config.max_level.to_level_filter();
+        log::set_boxed_logger(Self::new(config)).map(|()| log::set_max_level(max_level))
     }
 }
