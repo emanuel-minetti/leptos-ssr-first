@@ -173,8 +173,6 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     use sqlx::{Pool, Postgres};
     use crate::api::error::return_early;
 
-    let expires_at: i64;
-    let session_id: String;
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
 
     let account_row_result = query!(
@@ -197,11 +195,11 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                     "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
                 )
                 .unwrap();
-                return return_early(ApiError::InvalidCredentials)
+                return_early(ApiError::InvalidCredentials)
             }
             Some(account_row_record) => {
                 if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
-                    return return_early(ApiError::InvalidCredentials);
+                    return_early(ApiError::InvalidCredentials);
                 }
                 let session_row = query!(
                     r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
@@ -211,8 +209,12 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                 .await;
                 match session_row {
                     Ok(session_row_record) => {
-                        expires_at = session_row_record.expires_at.as_utc().unix_timestamp();
-                        session_id = session_row_record.id.to_string();
+                        Ok(ApiResponse {
+                            error: None,
+                            expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
+                            token: session_row_record.id.to_string(),
+                            data: (),
+                        })
                     }
                     Err(err) => {
                         return return_early(ApiError::DbError(format!(
@@ -227,13 +229,6 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
             return return_early(ApiError::DBConnectionError);
         }
     }
-
-    Ok(ApiResponse {
-        error: None,
-        expires_at,
-        token: session_id,
-        data: (),
-    })
 }
 
 #[server(client = crate::client::AddAuthHeaderClient)]
