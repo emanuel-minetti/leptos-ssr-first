@@ -25,6 +25,7 @@ getrandom = {version = "0.3.4", features = ["wasm_js"]}
 futures-util = "0.3.31"
 log = {version = "0.4.29",optional = true }
 config = { version = "0.15.17",optional = true }
+chrono = "0.4.42"
 
 [build-dependencies]
 leptos_i18n_build = "0.6.0-rc.2"
@@ -55,6 +56,7 @@ ssr = [
   "getrandom/wasm_js",
   "log",
   "config",
+  "log/std"
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

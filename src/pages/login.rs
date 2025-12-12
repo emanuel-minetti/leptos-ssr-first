@@ -235,19 +235,17 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
 pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnError> {
     use crate::model::language::Language;
     use actix_web::HttpMessage;
-    use leptos::leptos_dom::log;
     use leptos_actix::extract;
     use leptos_actix::redirect;
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};
     use std::str::FromStr;
+    use log::{log, Level};
+
 
     let req: actix_web::HttpRequest = extract().await?;
-    log!(
-        "middleware context: {:?}",
-        req.extensions_mut().get::<String>().unwrap()
-    );
+    log!(Level::Info, "middleware context: {:?}", req.extensions_mut().get::<String>().unwrap());
     let session_id = req.extensions_mut().get::<String>().unwrap().to_string();
     let user_row_result = query!(
         r#"

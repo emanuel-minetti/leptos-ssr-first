@@ -1,2 +1,3 @@
 pub mod configuration;
-pub mod middleware;
+pub mod authorization;
+pub mod logging;

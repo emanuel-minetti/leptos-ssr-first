@@ -4,6 +4,7 @@ use actix_web::{Error, HttpMessage};
 use std::future::{ready, Ready};
 use std::rc::Rc;
 use futures_util::future::LocalBoxFuture;
+use log::{log, Level};
 
 pub struct Authorisation;
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
@@ -48,7 +49,7 @@ where
         // grab url path from request to care for 'login'
         let url_path = req.path().split("/").last().unwrap().to_owned();
         if !url_path.starts_with("login") {
-            println!("Middleware called before server fn");
+            log!(Level::Info, "Middleware called before server fn");
             //TODO Review! No authentication done!!
             let auth_header = match req.headers().get("Authorization") {
                 None => {"None".to_string()}
@@ -67,7 +68,7 @@ where
             let res = srv.call(req).await?;
             let _request = res.request().clone();
             if !url_path.starts_with("login") {
-                println!("Middleware called after server fn");
+                log!(Level::Info, "Middleware called after server fn");
             }
             Ok(res.map_into_left_body())
         })

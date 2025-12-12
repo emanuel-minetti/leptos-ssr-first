@@ -1,5 +1,6 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
+use leptos_ssr_first::server_utils::logging::Logger;
 
 #[cfg(feature = "ssr")]
 #[actix_web::main]
@@ -14,7 +15,7 @@ async fn main() -> std::io::Result<()> {
     use leptos_ssr_first::app::*;
     use sqlx::{Pool, Postgres};
     use leptos_ssr_first::server_utils::configuration;
-    use leptos_ssr_first::server_utils::middleware::Authorisation;
+    use leptos_ssr_first::server_utils::authorization::Authorisation;
 
     //LEPTOS CODE
     let conf = get_configuration(None).unwrap();
@@ -22,6 +23,7 @@ async fn main() -> std::io::Result<()> {
 
     //LSF CODE
     let configuration = configuration::get_configuration().expect("Couldn't read configuration file.");
+    Logger::init(configuration.log).expect("Couldn't initialize logger");
     let db_url = configuration.database.connection_string();
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
@@ -34,7 +36,6 @@ async fn main() -> std::io::Result<()> {
         let leptos_options = &conf.leptos_options;
         let site_root = leptos_options.site_root.clone().to_string();
         let db_pool_clone = db_pool.clone();
-        //let db_pool_clone2 = db_pool.clone();
 
         println!("listening on http://{}", &addr);
 
