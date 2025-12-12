@@ -23,6 +23,8 @@ serde = { version = "1.0.228", features = ["derive"] }
 bcrypt = "0.17.1"
 getrandom = {version = "0.3.4", features = ["wasm_js"]}
 futures-util = "0.3.31"
+log = {version = "0.4.29",optional = true }
+config = { version = "0.15.17",optional = true }
 
 [build-dependencies]
 leptos_i18n_build = "0.6.0-rc.2"
@@ -51,6 +53,8 @@ ssr = [
   "sqlx/uuid",
   "sqlx/time",
   "getrandom/wasm_js",
+  "log",
+  "config",
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

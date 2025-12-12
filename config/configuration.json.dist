@@ -1,0 +1,15 @@
+{
+  "session_secret": [229, 84, 94, 175, 10, 21, 99, 226, 105, 37, 151, 121, 241, 201, 64, 176],
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "username": "lsf",
+    "password": "lsf",
+    "database_name": "lsf"
+  },
+  "log": {
+    "max_level": "DEBUG",
+    "path": "log/",
+    "days_to_keep": 2
+  }
+}

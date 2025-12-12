@@ -4,9 +4,9 @@ pub mod pages;
 pub mod model;
 pub mod utils;
 pub mod client;
-#[cfg(feature = "ssr")]
-pub mod middleware;
 pub mod api;
+#[cfg(feature = "ssr")]
+pub mod server_utils;
 
 include!(concat!(env!("OUT_DIR"), "/i18n/mod.rs"));
 

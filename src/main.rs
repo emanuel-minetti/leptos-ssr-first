@@ -1,6 +1,5 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
-use leptos_ssr_first::middleware::Authorisation;
 
 #[cfg(feature = "ssr")]
 #[actix_web::main]
@@ -14,14 +13,17 @@ async fn main() -> std::io::Result<()> {
     use leptos_meta::MetaTags;
     use leptos_ssr_first::app::*;
     use sqlx::{Pool, Postgres};
+    use leptos_ssr_first::server_utils::configuration;
+    use leptos_ssr_first::server_utils::middleware::Authorisation;
 
     //LEPTOS CODE
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
 
     //LSF CODE
-    let db_url = "postgres://lsf:lsf@localhost:5432/lsf";
-    let db_pool = Pool::<Postgres>::connect(db_url)
+    let configuration = configuration::get_configuration().expect("Couldn't read configuration file.");
+    let db_url = configuration.database.connection_string();
+    let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
         .expect("Couldn't connect to database.");
     //LSF CODE END
