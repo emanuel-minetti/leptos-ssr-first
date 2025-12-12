@@ -17,7 +17,6 @@ use serde::{Deserialize, Serialize};
 pub struct LoginCallParams {
     username: String,
     password: String,
-    orig_url: String,
 }
 
 #[component]
@@ -170,21 +169,20 @@ pub fn Login(
 pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnError> {
     use crate::api::error::ApiError;
     use bcrypt::verify;
-    use leptos_actix::redirect;
     use sqlx::query;
     use sqlx::{Pool, Postgres};
+    use crate::api::error::return_early;
 
-    let mut error: Option<ApiError> = None;
-    let mut expires_at = 0;
-    let mut session_id = "".to_string();
+    let expires_at: i64;
+    let session_id: String;
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
 
     let account_row_result = query!(
         r#"
-                SELECT pw_hash, id
-                FROM account
-                WHERE username = $1
-            "#,
+            SELECT pw_hash, id
+            FROM account
+            WHERE username = $1
+        "#,
         params.username
     )
     .fetch_optional(&db_pool)
@@ -193,38 +191,45 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     match account_row_result {
         Ok(account_row) => match account_row {
             None => {
-                error = Some(ApiError::InvalidCredentials);
+                // hinder timing attacks
+                let _ = verify(
+                    "",
+                    "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
+                )
+                .unwrap();
+                return return_early(ApiError::InvalidCredentials)
             }
             Some(account_row_record) => {
                 if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
-                    error = Some(ApiError::InvalidCredentials);
-                } else {
-                    let session_row = query!(
-                        r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
-                        account_row_record.id
-                    )
-                    .fetch_one(&db_pool)
-                    .await;
-                    match session_row {
-                        Ok(session_row_record) => {
-                            expires_at = session_row_record.expires_at.as_utc().unix_timestamp();
-                            session_id = session_row_record.id.to_string();
-                            redirect(params.orig_url.as_str());
-                        }
-                        Err(err) => {
-                            error = Some(ApiError::DbError(err.to_string()));
-                        }
+                    return return_early(ApiError::InvalidCredentials);
+                }
+                let session_row = query!(
+                    r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
+                    account_row_record.id
+                )
+                .fetch_one(&db_pool)
+                .await;
+                match session_row {
+                    Ok(session_row_record) => {
+                        expires_at = session_row_record.expires_at.as_utc().unix_timestamp();
+                        session_id = session_row_record.id.to_string();
+                    }
+                    Err(err) => {
+                        return return_early(ApiError::DbError(format!(
+                            "Error inserting session: {}",
+                            err.to_string()
+                        )))
                     }
                 }
             }
         },
         Err(_) => {
-            error = Some(ApiError::DBConnectionError);
+            return return_early(ApiError::DBConnectionError);
         }
     }
 
     Ok(ApiResponse {
-        error,
+        error: None,
         expires_at,
         token: session_id,
         data: (),
@@ -237,15 +242,18 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
     use actix_web::HttpMessage;
     use leptos_actix::extract;
     use leptos_actix::redirect;
+    use log::{log, Level};
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};
     use std::str::FromStr;
-    use log::{log, Level};
-
 
     let req: actix_web::HttpRequest = extract().await?;
-    log!(Level::Info, "middleware context: {:?}", req.extensions_mut().get::<String>().unwrap());
+    log!(
+        Level::Info,
+        "middleware context: {:?}",
+        req.extensions_mut().get::<String>().unwrap()
+    );
     let session_id = req.extensions_mut().get::<String>().unwrap().to_string();
     let user_row_result = query!(
         r#"
