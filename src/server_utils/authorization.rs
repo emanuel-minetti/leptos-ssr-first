@@ -3,8 +3,12 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::{Error, HttpMessage};
 use std::future::{ready, Ready};
 use std::rc::Rc;
+use actix_web::web::Data;
+use base64::Engine;
+use bytes::Bytes;
 use futures_util::future::LocalBoxFuture;
 use log::{log, Level};
+use sqlx::types::Uuid;
 
 pub struct Authorisation;
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
@@ -48,6 +52,7 @@ where
         let srv = self.service.clone();
         // grab url path from request to care for 'login'
         let url_path = req.path().split("/").last().unwrap().to_owned();
+        let session_secret = req.app_data::<Data<Bytes>>().expect("No session secret from server");
         if !url_path.starts_with("login") {
             log!(Level::Info, "Middleware called before server fn");
             //TODO Review! No authentication done!!
@@ -61,7 +66,12 @@ where
                 }
             };
             let token = auth_header.replace("Bearer ", "");
+            let token_bytes =  base64::engine::general_purpose::URL_SAFE.decode(&token).unwrap();
+            let session_id = Uuid::from_slice(&*simple_crypt::decrypt(token_bytes.as_ref(), &session_secret).unwrap()).unwrap();
+
             req.extensions_mut().insert(token);
+            req.extensions_mut().insert(session_id);
+            req.extensions_mut().insert(session_id);
         }
         Box::pin(async move {
             //call other middleware and handler and get the response

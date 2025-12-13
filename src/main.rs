@@ -1,6 +1,6 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
-use leptos_ssr_first::server_utils::logging::Logger;
+
 
 #[cfg(feature = "ssr")]
 #[actix_web::main]
@@ -16,6 +16,7 @@ async fn main() -> std::io::Result<()> {
     use leptos_ssr_first::server_utils::authorization::Authorisation;
     use leptos_ssr_first::server_utils::configuration;
     use sqlx::{Pool, Postgres};
+    use leptos_ssr_first::server_utils::logging::Logger;
 
     //LEPTOS CODE
     let conf = get_configuration(None).unwrap();
@@ -25,6 +26,7 @@ async fn main() -> std::io::Result<()> {
     let configuration =
         configuration::get_configuration().expect("Couldn't read configuration file.");
     Logger::init(configuration.log).expect("Couldn't initialize logger");
+    let session_secret = bytes::Bytes::from(configuration.session_secret);
     let db_url = configuration.database.connection_string();
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
@@ -38,16 +40,23 @@ async fn main() -> std::io::Result<()> {
         let site_root = leptos_options.site_root.clone().to_string();
         //LSF CODE
         let db_pool_clone = db_pool.clone();
+        let session_secret_clone = session_secret.clone();
         //LSF CODE END
 
         println!("listening on http://{}", &addr);
 
         App::new()
             //LSF CODE
-            .app_data(Data::new(db_pool_clone.clone()))
-            .service(web::scope("/api").wrap(Authorisation).route(
-                "/{func_name:.*}",
-                handle_server_fns_with_context(move || provide_context(db_pool_clone.clone())),
+            .service(web::scope("/api")
+                .app_data(Data::new(db_pool_clone.clone()))
+                .app_data(Data::new(session_secret_clone.clone()))
+                .wrap(Authorisation)
+                .route(
+                    "/{func_name:.*}",
+                    handle_server_fns_with_context(move || {
+                        provide_context(db_pool_clone.clone());
+                        provide_context(session_secret_clone.clone());
+                    }),
             ))
             //LSF CODE END
             // serve JS/WASM/CSS from `pkg`

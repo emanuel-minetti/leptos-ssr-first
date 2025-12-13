@@ -172,8 +172,11 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     use sqlx::query;
     use sqlx::{Pool, Postgres};
     use crate::api::error::return_early;
+    use base64::Engine;
+    use bytes::Bytes;
 
     let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
+
     let account_row_result = query!(
         r#"
             SELECT pw_hash, id
@@ -184,7 +187,6 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     )
     .fetch_optional(&db_pool)
     .await;
-
     match account_row_result {
         Ok(account_row) => match account_row {
             None => {
@@ -208,11 +210,16 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                 .await;
                 match session_row {
                     Ok(session_row_record) => {
-                        //let session_token_ bytes =
+                        let session_secret = use_context::<Bytes>().expect("No session secret from server");
+                        let id = session_row_record.id;
+                        let session_token_bytes = simple_crypt::encrypt(id.as_ref(), &session_secret).unwrap();
+                        let session_token = base64::engine::general_purpose::URL_SAFE.encode(&session_token_bytes);
+                        // let session_secret_string = base64::engine::general_purpose::URL_SAFE.encode(&session_secret);
+                        // log!(Level::Info, "The session secret is {}", session_secret_string);
                         Ok(ApiResponse {
                             error: None,
                             expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
-                            token: session_row_record.id.to_string(),
+                            token: session_token,
                             data: (),
                         })
                     }
@@ -241,7 +248,6 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};
-    use std::str::FromStr;
 
     let req: actix_web::HttpRequest = extract().await?;
     log!(
@@ -249,7 +255,8 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
         "middleware context: {:?}",
         req.extensions_mut().get::<String>().unwrap()
     );
-    let session_id = req.extensions_mut().get::<String>().unwrap().to_string();
+    let session_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
+    let token = req.extensions_mut().get::<String>().unwrap().to_string();
     let user_row_result = query!(
         r#"
             SELECT name, preferred_language as "preferred_language: Language"
@@ -257,7 +264,7 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
                 JOIN session s ON a.id = s.account_id
             WHERE s.id = $1
         "#,
-        Uuid::from_str(&session_id).unwrap()
+        session_id
     );
     let user_row = user_row_result
         .fetch_one(&use_context::<Pool<Postgres>>().unwrap())
@@ -265,7 +272,7 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
     redirect(orig_url.as_str());
     Ok(ApiResponse {
         expires_at: 0,
-        token: "".to_string(),
+        token,
         error: None,
         data: {
             User {
