@@ -253,17 +253,16 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
         "middleware context: {:?}",
         req.extensions_mut().get::<String>().unwrap()
     );
-    let session_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
+    let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
     let token = req.extensions_mut().get::<String>().unwrap().to_string();
     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
     let user_row_result = query!(
         r#"
             SELECT name, preferred_language as "preferred_language: Language"
-            FROM account a
-                JOIN session s ON a.id = s.account_id
-            WHERE s.id = $1
+            FROM account
+            WHERE id = $1
         "#,
-        session_id
+        account_id
     );
     let user_row = user_row_result
         .fetch_one(&**use_context::<Data<Pool<Postgres>>>().unwrap())

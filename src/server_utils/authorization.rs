@@ -87,10 +87,11 @@ where
             )
             .fetch_optional(&***db_pool)
             .await
-            .unwrap();
-            let expires_at = session_row.unwrap().expires_at.as_utc().unix_timestamp();
+            .unwrap().unwrap();
+            let expires_at = session_row.expires_at.as_utc().unix_timestamp();
+            let account_id = session_row.account_id;
             req.extensions_mut().insert(token);
-            req.extensions_mut().insert(session_id);
+            req.extensions_mut().insert(account_id);
             req.extensions_mut().insert(expires_at);
 
             Ok(0)
