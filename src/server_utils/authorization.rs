@@ -81,18 +81,26 @@ where
             // authenticate
             let session_row = query!(
                 r#"
-                SELECT * FROM session WHERE id = $1
+                SELECT account_id FROM session WHERE id = $1
                 "#,
                 session_id
             )
             .fetch_optional(&***db_pool)
             .await
             .unwrap().unwrap();
-            let expires_at = session_row.expires_at.as_utc().unix_timestamp();
             let account_id = session_row.account_id;
+            let updated_session_row = query!(
+                r#"
+                UPDATE session SET expires_at = DEFAULT
+                WHERE id = $1
+                RETURNING expires_at
+                "#,
+                session_id
+            ).fetch_one(&***db_pool).await.unwrap();
+
             req.extensions_mut().insert(token);
             req.extensions_mut().insert(account_id);
-            req.extensions_mut().insert(expires_at);
+            req.extensions_mut().insert(updated_session_row.expires_at);
 
             Ok(0)
         }
