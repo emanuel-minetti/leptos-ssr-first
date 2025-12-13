@@ -100,7 +100,7 @@ where
 
             req.extensions_mut().insert(token);
             req.extensions_mut().insert(account_id);
-            req.extensions_mut().insert(updated_session_row.expires_at);
+            req.extensions_mut().insert(updated_session_row.expires_at.as_utc().unix_timestamp());
 
             Ok(0)
         }

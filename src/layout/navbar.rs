@@ -1,3 +1,4 @@
+use crate::api::response::ApiResponse;
 use crate::i18n::{t, use_i18n};
 use crate::model::language::Language;
 use crate::model::user::User;
@@ -7,12 +8,6 @@ use leptos::html::*;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos::{component, IntoView};
-#[cfg(feature = "ssr")]
-use sqlx::query;
-#[cfg(feature = "ssr")]
-use sqlx::types::Uuid;
-#[cfg(feature = "ssr")]
-use sqlx::{Pool, Postgres};
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlSelectElement};
 
@@ -56,12 +51,8 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                                 // set lang to server if applicable
                                 if user.get().is_some() {
                                     let lang: Language = lang.get().into();
-                                    // using unwrap here because we know user is Some
-                                    // TODO adjust!
-                                    //let token = user.get().unwrap().token;
-                                    let token = "";
                                     spawn_local(async {
-                                        set_lang(lang, token.into())
+                                        set_lang(lang)
                                             .await
                                             .expect("Got server error setting lang");
                                     });
@@ -102,27 +93,48 @@ fn NavBarLoginInfo() -> impl IntoView {
 }
 
 #[server(client = crate::client::AddAuthHeaderClient)]
-pub async fn set_lang(lang: Language, session_id: String) -> Result<(), ServerFnError> {
+pub async fn set_lang(lang: Language) -> Result<ApiResponse<User>, ServerFnError> {
+    use actix_web::web::Data;
+    use actix_web::HttpMessage;
     use leptos::logging::log;
     use leptos_actix::extract;
-    use actix_web::HttpMessage;
+    use sqlx::query;
+    use sqlx::types::Uuid;
+    use sqlx::{Pool, Postgres};
 
-
-    let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
-    log!("called with lang: {} and session_id: {}", lang, session_id);
+    let db_pool = use_context::<Data<Pool<Postgres>>>().expect("No db pool?");
     let req: actix_web::HttpRequest = extract().await?;
-    // let middle_ware_context = use_context::<String>();
-    log!("middleware context: {:?}", req.extensions_mut().get::<String>());
+    let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
+    let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
+    let token = req.extensions_mut().get::<String>().unwrap().clone();
+    log!("called with lang: {} and account_id: {}", lang, account_id);
+    log!(
+        "middleware context: {:?}",
+        req.extensions_mut().get::<String>()
+    );
     //set lang in db
-    let _ = query!(
-        r#"UPDATE account
-                SET preferred_language = ($1::text)::lang
-                WHERE id = (SELECT account_id FROM session WHERE id = $2)"#,
+    let account_row = query!(
+        r#"
+        UPDATE account
+            SET preferred_language = ($1::text)::lang
+        WHERE id = $2
+        RETURNING username, preferred_language as "preferred_language: Language"
+        "#,
         lang.to_string(),
-        Uuid::parse_str(&session_id).unwrap()
+        &account_id
     )
-    .execute(&db_pool)
+    .fetch_one(&**db_pool)
     .await?;
 
-    Ok(())
+    Ok(ApiResponse {
+        expires_at,
+        token,
+        error: None,
+        data: {
+            User {
+                name: account_row.username,
+                preferred_language: account_row.preferred_language.to_string(),
+            }
+        },
+    })
 }
