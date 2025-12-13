@@ -9,6 +9,7 @@ use sqlx::types::Uuid;
 use sqlx::{query, Pool, Postgres};
 use std::future::{ready, Ready};
 use std::rc::Rc;
+use crate::api::error::ApiError;
 
 pub struct Authorisation;
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
@@ -53,7 +54,7 @@ where
         // grab url path from request to care for 'login'
         let url_path = req.path().split("/").last().unwrap().to_owned();
 
-        async fn authorize(req: &ServiceRequest) -> Result<i64, Error> {
+        async fn authorize(req: &ServiceRequest) -> Option<ApiError> {
             let session_secret = req
                 .app_data::<Data<Bytes>>()
                 .expect("No session secret from server");
@@ -102,13 +103,22 @@ where
             req.extensions_mut().insert(account_id);
             req.extensions_mut().insert(updated_session_row.expires_at.as_utc().unix_timestamp());
 
-            Ok(0)
+            None
         }
 
         Box::pin(async move {
             if !url_path.starts_with("login") {
                 //log!(Level::Info, "Middleware called before server fn");
-                let _ = authorize(&req).await.unwrap();
+                let db_pool = req
+                    .app_data::<Data<Pool<Postgres>>>()
+                    .expect("No db pool from server");
+                let _ = authorize(&req).await;
+                let _ = query!(
+                    r#"
+                    DELETE FROM session
+                    WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '40 minutes';
+                    "#
+                ).execute(&***db_pool).await.unwrap();
             }
             //call other middleware and handler and get the response
             let res = srv.call(req).await?;
