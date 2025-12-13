@@ -9,9 +9,11 @@ use crate::pages::not_found::NotFound;
 use crate::pages::privacy::Privacy;
 use leptos::html::main;
 use leptos::prelude::*;
+use leptos::tachys::html::element::{body, head, html};
+use leptos::tachys::html::{doctype, InertElement};
 use leptos_i18n::context::{init_i18n_context_with_options, I18nContextOptions};
 use leptos_i18n::I18nContext;
-use leptos_meta::{provide_meta_context, Stylesheet, StylesheetProps, Title, TitleProps};
+use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, StylesheetProps, Title, TitleProps};
 use leptos_router::components::{
     ProtectedRoute, ProtectedRouteProps, RouteProps, RouterProps, RoutesProps,
 };
@@ -20,6 +22,28 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    View::new((
+        doctype("html"),
+        html().lang("en").child((
+            head().child((
+                InertElement::new("<meta charset=\"utf-8\" />"),
+                InertElement::new(
+                    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
+                ),
+                AutoReload(AutoReloadProps::builder().options(options.clone()).build()),
+                HydrationScripts(
+                    HydrationScriptsProps::builder()
+                        .options(options.clone())
+                        .build(),
+                ),
+                MetaTags(),
+            )),
+            body().child(App()),
+        )),
+    ))
+}
 
 #[component]
 pub fn App() -> impl IntoView {
