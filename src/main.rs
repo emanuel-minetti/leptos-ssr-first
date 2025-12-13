@@ -1,7 +1,6 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
 
-
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -15,8 +14,8 @@ async fn main() -> std::io::Result<()> {
     use leptos_ssr_first::app::*;
     use leptos_ssr_first::server_utils::authorization::Authorisation;
     use leptos_ssr_first::server_utils::configuration;
-    use sqlx::{Pool, Postgres};
     use leptos_ssr_first::server_utils::logging::Logger;
+    use sqlx::{Pool, Postgres};
 
     //LEPTOS CODE
     let conf = get_configuration(None).unwrap();
@@ -47,17 +46,19 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             //LSF CODE
-            .service(web::scope("/api")
-                .app_data(Data::new(db_pool_clone.clone()))
-                .app_data(Data::new(session_secret_clone.clone()))
-                .wrap(Authorisation)
-                .route(
-                    "/{func_name:.*}",
-                    handle_server_fns_with_context(move || {
-                        provide_context(db_pool_clone.clone());
-                        provide_context(session_secret_clone.clone());
-                    }),
-            ))
+            .service(
+                web::scope("/api")
+                    .app_data(Data::new(db_pool_clone.clone()))
+                    .app_data(Data::new(session_secret_clone.clone()))
+                    .wrap(Authorisation)
+                    .route(
+                        "/{func_name:.*}",
+                        handle_server_fns_with_context(move || {
+                            provide_context(Data::new(db_pool_clone.clone()));
+                            provide_context(Data::new(session_secret_clone.clone()));
+                        }),
+                    ),
+            )
             //LSF CODE END
             // serve JS/WASM/CSS from `pkg`
             .service(Files::new("/pkg", format!("{site_root}/pkg")))

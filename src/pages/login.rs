@@ -167,16 +167,16 @@ pub fn Login(
 
 #[server]
 pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnError> {
+    use crate::api::error::return_early;
     use crate::api::error::ApiError;
+    use actix_web::web::Data;
+    use base64::Engine;
     use bcrypt::verify;
+    use bytes::Bytes;
     use sqlx::query;
     use sqlx::{Pool, Postgres};
-    use crate::api::error::return_early;
-    use base64::Engine;
-    use bytes::Bytes;
 
-    let db_pool = use_context::<Pool<Postgres>>().expect("No db pool?");
-
+    let db_pool = use_context::<Data<Pool<Postgres>>>().expect("No db pool?");
     let account_row_result = query!(
         r#"
             SELECT pw_hash, id
@@ -185,7 +185,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         "#,
         params.username
     )
-    .fetch_optional(&db_pool)
+    .fetch_optional(&**db_pool)
     .await;
     match account_row_result {
         Ok(account_row) => match account_row {
@@ -200,22 +200,23 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
             }
             Some(account_row_record) => {
                 if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
-                    return  return_early(ApiError::InvalidCredentials);
+                    return return_early(ApiError::InvalidCredentials);
                 }
                 let session_row = query!(
                     r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
                     account_row_record.id
                 )
-                .fetch_one(&db_pool)
+                .fetch_one(&**db_pool)
                 .await;
                 match session_row {
                     Ok(session_row_record) => {
-                        let session_secret = use_context::<Bytes>().expect("No session secret from server");
+                        let session_secret =
+                            use_context::<Data<Bytes>>().expect("No session secret from server");
                         let id = session_row_record.id;
-                        let session_token_bytes = simple_crypt::encrypt(id.as_ref(), &session_secret).unwrap();
-                        let session_token = base64::engine::general_purpose::URL_SAFE.encode(&session_token_bytes);
-                        // let session_secret_string = base64::engine::general_purpose::URL_SAFE.encode(&session_secret);
-                        // log!(Level::Info, "The session secret is {}", session_secret_string);
+                        let session_token_bytes =
+                            simple_crypt::encrypt(id.as_ref(), session_secret.get_ref()).unwrap();
+                        let session_token =
+                            base64::engine::general_purpose::URL_SAFE.encode(&session_token_bytes);
                         Ok(ApiResponse {
                             error: None,
                             expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
@@ -223,24 +224,21 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                             data: (),
                         })
                     }
-                    Err(err) => {
-                        return_early(ApiError::DbError(format!(
-                            "Error inserting session: {}",
-                            err.to_string()
-                        )))
-                    }
+                    Err(err) => return_early(ApiError::DbError(format!(
+                        "Error inserting session: {}",
+                        err.to_string()
+                    ))),
                 }
             }
         },
-        Err(_) => {
-            return_early(ApiError::DBConnectionError)
-        }
+        Err(_) => return_early(ApiError::DBConnectionError),
     }
 }
 
 #[server(client = crate::client::AddAuthHeaderClient)]
 pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnError> {
     use crate::model::language::Language;
+    use actix_web::web::Data;
     use actix_web::HttpMessage;
     use leptos_actix::extract;
     use leptos_actix::redirect;
@@ -257,6 +255,7 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
     );
     let session_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
     let token = req.extensions_mut().get::<String>().unwrap().to_string();
+    let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
     let user_row_result = query!(
         r#"
             SELECT name, preferred_language as "preferred_language: Language"
@@ -267,11 +266,11 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
         session_id
     );
     let user_row = user_row_result
-        .fetch_one(&use_context::<Pool<Postgres>>().unwrap())
+        .fetch_one(&**use_context::<Data<Pool<Postgres>>>().unwrap())
         .await?;
     redirect(orig_url.as_str());
     Ok(ApiResponse {
-        expires_at: 0,
+        expires_at,
         token,
         error: None,
         data: {
