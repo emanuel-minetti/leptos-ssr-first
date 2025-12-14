@@ -173,10 +173,18 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     use base64::Engine;
     use bcrypt::verify;
     use bytes::Bytes;
+    use log::{log, Level};
     use sqlx::query;
     use sqlx::{Pool, Postgres};
 
-    let db_pool = use_context::<Data<Pool<Postgres>>>().expect("No db pool?");
+    let db_pool_result = use_context::<Data<Pool<Postgres>>>();
+    let db_pool = match db_pool_result {
+        None => {
+            log!(Level::Warn, "No database pool found in context");
+            return return_early(ApiError::DBConnectionError);
+        }
+        Some(db_pool) => db_pool,
+    };
     let account_row_result = query!(
         r#"
             SELECT pw_hash, id
@@ -213,6 +221,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                         let session_secret =
                             use_context::<Data<Bytes>>().expect("No session secret from server");
                         let id = session_row_record.id;
+                        //TODO use `sign` instead of `encrypt`
                         let session_token_bytes =
                             simple_crypt::encrypt(id.as_ref(), session_secret.get_ref()).unwrap();
                         let session_token =
@@ -248,11 +257,6 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
     use sqlx::{Pool, Postgres};
 
     let req: actix_web::HttpRequest = extract().await?;
-    log!(
-        Level::Info,
-        "middleware context: {:?}",
-        req.extensions_mut().get::<String>().unwrap()
-    );
     let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
     let token = req.extensions_mut().get::<String>().unwrap().to_string();
     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
