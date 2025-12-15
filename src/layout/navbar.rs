@@ -96,7 +96,6 @@ fn NavBarLoginInfo() -> impl IntoView {
 pub async fn set_lang(lang: Language) -> Result<ApiResponse<User>, ServerFnError> {
     use actix_web::web::Data;
     use actix_web::HttpMessage;
-    use leptos::logging::log;
     use leptos_actix::extract;
     use sqlx::query;
     use sqlx::types::Uuid;
@@ -107,11 +106,7 @@ pub async fn set_lang(lang: Language) -> Result<ApiResponse<User>, ServerFnError
     let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
     let token = req.extensions_mut().get::<String>().unwrap().clone();
-    log!("called with lang: {} and account_id: {}", lang, account_id);
-    log!(
-        "middleware context: {:?}",
-        req.extensions_mut().get::<String>()
-    );
+
     //set lang in db
     let account_row = query!(
         r#"

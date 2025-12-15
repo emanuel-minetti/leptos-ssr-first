@@ -7,6 +7,7 @@ use crate::pages::imprint::Imprint;
 use crate::pages::login::{Login, LoginProps};
 use crate::pages::not_found::NotFound;
 use crate::pages::privacy::Privacy;
+use crate::utils::get_lang_from_browser;
 use leptos::html::main;
 use leptos::prelude::*;
 use leptos::tachys::html::element::{body, head, html};
@@ -88,12 +89,6 @@ pub fn App() -> impl IntoView {
 
     // initializing and providing the user
     let (user, set_user) = signal(None::<User>);
-    // let (user, set_user) = signal(Some( User {
-    //     name: "Emanuel Minetti".to_string(),
-    //     lang: "de".to_string(),
-    //     token: "".to_string(),
-    //     expires: 0
-    // }));
     provide_context(user);
 
     // the guard for protected routes
@@ -192,20 +187,4 @@ pub fn App() -> impl IntoView {
                 .build(),
         ),
     ))
-}
-
-fn get_lang_from_browser() -> Option<String> {
-    let window = web_sys::window().expect("no global `window` exists");
-    let navigator_lang = window.navigator().language();
-    let local_storage = window.local_storage().expect("no global storage exists");
-    let local_storage_lang = local_storage
-        .unwrap()
-        .get_item("lang")
-        .expect("failed to get lang from storage");
-
-    if local_storage_lang.is_none() && navigator_lang.is_some() {
-        Some(navigator_lang.unwrap()[0..2].to_string())
-    } else {
-        local_storage_lang
-    }
 }

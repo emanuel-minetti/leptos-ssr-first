@@ -1,5 +1,21 @@
 use crate::i18n::{use_i18n, Locale};
 
+pub fn get_lang_from_browser() -> Option<String> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let navigator_lang = window.navigator().language();
+    let local_storage = window.local_storage().expect("no global storage exists");
+    let local_storage_lang = local_storage
+        .unwrap()
+        .get_item("lang")
+        .expect("failed to get lang from storage");
+
+    if local_storage_lang.is_none() && navigator_lang.is_some() {
+        Some(navigator_lang.unwrap()[0..2].to_string())
+    } else {
+        local_storage_lang
+    }
+}
+
 pub fn set_lang_to_locale_storage(lang: &str) {
     let window = web_sys::window().expect("no global `window` exists");
     let local_storage = window
