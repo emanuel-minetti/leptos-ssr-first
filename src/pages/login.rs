@@ -26,7 +26,8 @@ pub fn Login(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
-    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
+    let lang = use_context::<ReadSignal<String>>()
+        .expect("lang missing from context");
     let orig_url = use_query_map()
         .get_untracked()
         .get("orig_url")
@@ -169,7 +170,7 @@ pub fn Login(
 pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnError> {
     use crate::api::error::return_early;
     use crate::api::error::ApiError;
-    use crate::api::jwt::JwtKeys;
+    use crate::api::jwt::{JwtClaim, JwtKeys};
     use actix_web::web::Data;
     use bcrypt::verify;
     use jsonwebtoken::encode;
@@ -196,6 +197,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     )
     .fetch_optional(&**db_pool)
     .await;
+
     match account_row_result {
         Ok(account_row) => match account_row {
             None => {
@@ -221,9 +223,9 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                     Ok(session_row_record) => {
                         let jwt_keys =
                             use_context::<Data<JwtKeys>>().expect("No JWT keys from server");
-                        let claim = crate::api::jwt::JwtClaim::new(session_row_record.id);
-                        let token =
-                            encode(&Header::default(), &claim, &jwt_keys.encode_key).unwrap();
+                        let claim = JwtClaim::new(session_row_record.id);
+                        let token = encode(&Header::default(), &claim, &jwt_keys.encode_key)
+                            .expect("JWT encode failed");
                         Ok(ApiResponse {
                             error: None,
                             expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
@@ -269,6 +271,7 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
         .fetch_one(&**use_context::<Data<Pool<Postgres>>>().unwrap())
         .await?;
     redirect(orig_url.as_str());
+
     Ok(ApiResponse {
         expires_at,
         token,
