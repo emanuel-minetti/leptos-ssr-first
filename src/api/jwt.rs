@@ -3,6 +3,7 @@ use std::str::FromStr;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
+use sqlx::types::uuid::Error;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JwtClaim {
@@ -23,8 +24,11 @@ impl JwtClaim {
 }
 
 impl JwtClaim {
-    pub fn into_uuid(self) -> Uuid {
-        Uuid::from_str(&self.session_id).unwrap()
+    pub fn try_into_uuid(self) -> Result<Uuid, Error> {
+        match Uuid::from_str(&self.session_id) {
+            Ok(uuid) => {Ok(uuid)}
+            Err(err) => {Err(err)}
+        }
     }
 }
 

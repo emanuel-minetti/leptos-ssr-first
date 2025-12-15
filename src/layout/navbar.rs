@@ -121,6 +121,7 @@ pub async fn set_lang(lang: Language) -> Result<ApiResponse<User>, ServerFnError
     .fetch_one(&**db_pool)
     .await?;
 
+    //TODO remove focus
     Ok(ApiResponse {
         expires_at,
         token,

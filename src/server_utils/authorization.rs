@@ -6,6 +6,8 @@ use actix_web::web::Data;
 use actix_web::{Error, HttpMessage};
 use futures_util::future::LocalBoxFuture;
 use jsonwebtoken::decode;
+use log::{log, Level};
+use regex::Regex;
 use sqlx::{query, Pool, Postgres};
 use std::future::{ready, Ready};
 use std::rc::Rc;
@@ -53,31 +55,88 @@ where
         // grab url path from request to care for 'login'
         let url_path = req.path().split("/").last().unwrap().to_owned();
 
-        async fn authorize(req: &ServiceRequest) -> Option<ApiError> {
-            let jwt_keys = req
-                .app_data::<Data<JwtKeys>>()
-                .expect("No session secret from server");
-            let db_pool = req
-                .app_data::<Data<Pool<Postgres>>>()
-                .expect("No db pool from server");
+        async fn authorize(
+            req: &ServiceRequest,
+            db_pool: &Data<Pool<Postgres>>,
+        ) -> Option<ApiError> {
+            let jwt_keys = match req.app_data::<Data<JwtKeys>>() {
+                None => {
+                    log!(Level::Error, "No JWT keys found in request: {:?}", req);
+                    panic!("No JWT keys found in request: {:?}", req);
+                }
+                Some(keys) => keys,
+            };
             let auth_header = match req.headers().get("Authorization") {
-                None => return Some(ApiError::InvalidCredentials),
+                None => {
+                    log!(Level::Trace, "No Authorization header found: {:?}", req);
+                    return Some(ApiError::Unauthorized);
+                }
                 Some(header_value) => {
                     if header_value.is_empty() {
-                        return Some(ApiError::InvalidCredentials)
+                        log!(Level::Trace, "Empty Authorization header: {:?}", req);
+                        return Some(ApiError::Unauthorized);
                     } else {
-                        header_value.to_owned().to_str().unwrap().to_string()
+                        match header_value.to_owned().to_str() {
+                            Err(_) => {
+                                log!(
+                                    Level::Trace,
+                                    "Couldn't convert authorization header value to &str: {:?}",
+                                    req
+                                );
+                                return Some(ApiError::Unauthorized);
+                            }
+                            Ok(value) => value.to_string(),
+                        }
                     }
                 }
             };
-            let token = auth_header.replace("Bearer ", "");
-            let session_id =
-                decode::<JwtClaim>(&token, &jwt_keys.decode_key, &get_jwt_validation())
-                    .unwrap()
-                    .claims
-                    .into_uuid();
+            let token_matcher = Regex::new(r"Bearer (.+)").unwrap();
+            let token_capture = match token_matcher.captures(&auth_header) {
+                None => {
+                    log!(
+                        Level::Trace,
+                        "Authorization header has no Bearer token: {:?}",
+                        req
+                    );
+                    return Some(ApiError::Unauthorized);
+                }
+                Some(capture) => capture,
+            };
+            let token = match token_capture.get(1) {
+                None => {
+                    log!(
+                        Level::Trace,
+                        "Authorization header has an empty Bearer token: {:?}",
+                        req
+                    );
+                    return Some(ApiError::Unauthorized);
+                }
+                Some(capture) => capture.as_str().to_string(),
+            };
+            let token_decode_result =
+                decode::<JwtClaim>(&token, &jwt_keys.decode_key, &get_jwt_validation());
+            let session_id_claim = match token_decode_result {
+                Err(_) => {
+                    log!(
+                        Level::Trace,
+                        "Authorization header has a non valid signature or payload: {:?}",
+                        req
+                    );
+                    return Some(ApiError::Unauthorized);
+                }
+                Ok(claim) => claim,
+            };
+
+            let session_id = match session_id_claim.claims.try_into_uuid() {
+                Err(_) => {
+                    log!(Level::Trace, "Payload is not an UUID: {:?}", req);
+                    return Some(ApiError::Unauthorized);
+                }
+                Ok(uuid) => uuid,
+            };
+
             // authenticate
-            let session_row = query!(
+            let session_row = match query!(
                 r#"
                 SELECT account_id FROM session WHERE id = $1
                 "#,
@@ -85,10 +144,27 @@ where
             )
             .fetch_optional(&***db_pool)
             .await
-            .unwrap()
-            .unwrap();
+            {
+                Err(err) => {
+                    log!(
+                        Level::Trace,
+                        "DB returned an error in authorize: \nreq: {:?} \noriginal error: {:?}",
+                        req,
+                        err
+                    );
+                    return Some(ApiError::Unauthorized);
+                }
+                Ok(session_id_option) => match session_id_option {
+                    None => {
+                        log!(Level::Trace, "No session found: \nreq: {:?}", req,);
+                        return Some(ApiError::Unauthorized);
+                    }
+                    Some(row) => row,
+                },
+            };
+
             let account_id = session_row.account_id;
-            let updated_session_row = query!(
+            let updated_session_row_result = query!(
                 r#"
                 UPDATE session SET expires_at = DEFAULT
                 WHERE id = $1
@@ -97,8 +173,15 @@ where
                 session_id
             )
             .fetch_one(&***db_pool)
-            .await
-            .unwrap();
+            .await;
+
+            let updated_session_row = match updated_session_row_result {
+                Err(_) => {
+                    log!(Level::Warn, "Couldn't update session row: \nreq: {:?}", req);
+                    return Some(ApiError::Unauthorized);
+                }
+                Ok(row) => row,
+            };
 
             req.extensions_mut().insert(token);
             req.extensions_mut().insert(account_id);
@@ -110,11 +193,14 @@ where
 
         Box::pin(async move {
             if !url_path.starts_with("login") {
-                //log!(Level::Info, "Middleware called before server fn");
-                let db_pool = req
-                    .app_data::<Data<Pool<Postgres>>>()
-                    .expect("No db pool from server");
-                let _ = authorize(&req).await;
+                let db_pool = match req.app_data::<Data<Pool<Postgres>>>() {
+                    None => {
+                        let error_msg = "No DB pool found in request";
+                        log!(Level::Error, "{}: {:?}", error_msg, req);
+                        panic!("No DB pool found in request: {:?}", req);
+                    }
+                    Some(pool) => pool,
+                };
                 let _ = query!(
                     r#"
                     DELETE FROM session
@@ -123,7 +209,14 @@ where
                 )
                 .execute(&***db_pool)
                 .await
+                    //TODO review
                 .unwrap();
+
+                let auth_option = authorize(&req, db_pool).await;
+                match auth_option{
+                    None => {}
+                    Some(_) => {}
+                }
             }
             //call other middleware and handler and get the response
             let res = srv.call(req).await?;
