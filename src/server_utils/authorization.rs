@@ -61,10 +61,10 @@ where
                 .app_data::<Data<Pool<Postgres>>>()
                 .expect("No db pool from server");
             let auth_header = match req.headers().get("Authorization") {
-                None => "None".to_string(),
+                None => return Some(ApiError::InvalidCredentials),
                 Some(header_value) => {
                     if header_value.is_empty() {
-                        "Empty".to_string()
+                        return Some(ApiError::InvalidCredentials)
                     } else {
                         header_value.to_owned().to_str().unwrap().to_string()
                     }
