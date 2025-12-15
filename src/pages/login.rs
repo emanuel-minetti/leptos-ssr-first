@@ -169,10 +169,11 @@ pub fn Login(
 pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnError> {
     use crate::api::error::return_early;
     use crate::api::error::ApiError;
+    use crate::api::jwt::JwtKeys;
     use actix_web::web::Data;
-    use base64::Engine;
     use bcrypt::verify;
-    use bytes::Bytes;
+    use jsonwebtoken::encode;
+    use jsonwebtoken::Header;
     use log::{log, Level};
     use sqlx::query;
     use sqlx::{Pool, Postgres};
@@ -218,18 +219,15 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                 .await;
                 match session_row {
                     Ok(session_row_record) => {
-                        let session_secret =
-                            use_context::<Data<Bytes>>().expect("No session secret from server");
-                        let id = session_row_record.id;
-                        //TODO use `sign` instead of `encrypt`
-                        let session_token_bytes =
-                            simple_crypt::encrypt(id.as_ref(), session_secret.get_ref()).unwrap();
-                        let session_token =
-                            base64::engine::general_purpose::URL_SAFE.encode(&session_token_bytes);
+                        let jwt_keys =
+                            use_context::<Data<JwtKeys>>().expect("No JWT keys from server");
+                        let claim = crate::api::jwt::JwtClaim::new(session_row_record.id);
+                        let token =
+                            encode(&Header::default(), &claim, &jwt_keys.encode_key).unwrap();
                         Ok(ApiResponse {
                             error: None,
                             expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
-                            token: session_token,
+                            token,
                             data: (),
                         })
                     }
@@ -251,7 +249,6 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
     use actix_web::HttpMessage;
     use leptos_actix::extract;
     use leptos_actix::redirect;
-    use log::{log, Level};
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};

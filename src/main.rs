@@ -1,5 +1,6 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
+use leptos_ssr_first::api;
 
 #[cfg(feature = "ssr")]
 #[actix_web::main]
@@ -24,7 +25,7 @@ async fn main() -> std::io::Result<()> {
     let configuration =
         configuration::get_configuration().expect("Couldn't read configuration file.");
     Logger::init(configuration.log).expect("Couldn't initialize logger");
-    let session_secret = bytes::Bytes::from(configuration.session_secret);
+    let jwt_keys = api::jwt::get_jwt_keys(configuration.session_secret);
     let db_url = configuration.database.connection_string();
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
@@ -38,7 +39,7 @@ async fn main() -> std::io::Result<()> {
         let site_root = leptos_options.site_root.clone().to_string();
         //LSF CODE
         let db_pool_clone = db_pool.clone();
-        let session_secret_clone = session_secret.clone();
+        let jwt_keys_clone = jwt_keys.clone();
         //LSF CODE END
 
         println!("listening on http://{}", &addr);
@@ -48,13 +49,13 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .app_data(Data::new(db_pool_clone.clone()))
-                    .app_data(Data::new(session_secret_clone.clone()))
+                    .app_data(Data::new(jwt_keys_clone.clone()))
                     .wrap(Authorisation)
                     .route(
                         "/{func_name:.*}",
                         handle_server_fns_with_context(move || {
                             provide_context(Data::new(db_pool_clone.clone()));
-                            provide_context(Data::new(session_secret_clone.clone()));
+                            provide_context(Data::new(jwt_keys_clone.clone()));
                         }),
                     ),
             )

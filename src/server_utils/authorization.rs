@@ -1,15 +1,14 @@
+use crate::api::error::ApiError;
+use crate::api::jwt::{get_jwt_validation, JwtClaim, JwtKeys};
 use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::web::Data;
 use actix_web::{Error, HttpMessage};
-use base64::Engine;
-use bytes::Bytes;
 use futures_util::future::LocalBoxFuture;
-use sqlx::types::Uuid;
+use jsonwebtoken::decode;
 use sqlx::{query, Pool, Postgres};
 use std::future::{ready, Ready};
 use std::rc::Rc;
-use crate::api::error::ApiError;
 
 pub struct Authorisation;
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
@@ -55,8 +54,8 @@ where
         let url_path = req.path().split("/").last().unwrap().to_owned();
 
         async fn authorize(req: &ServiceRequest) -> Option<ApiError> {
-            let session_secret = req
-                .app_data::<Data<Bytes>>()
+            let jwt_keys = req
+                .app_data::<Data<JwtKeys>>()
                 .expect("No session secret from server");
             let db_pool = req
                 .app_data::<Data<Pool<Postgres>>>()
@@ -72,13 +71,11 @@ where
                 }
             };
             let token = auth_header.replace("Bearer ", "");
-            let token_bytes = base64::engine::general_purpose::URL_SAFE
-                .decode(&token)
-                .unwrap();
-            let session_id = Uuid::from_slice(
-                &*simple_crypt::decrypt(token_bytes.as_ref(), &session_secret).unwrap(),
-            )
-            .unwrap();
+            let session_id =
+                decode::<JwtClaim>(&token, &jwt_keys.decode_key, &get_jwt_validation())
+                    .unwrap()
+                    .claims
+                    .into_uuid();
             // authenticate
             let session_row = query!(
                 r#"
@@ -88,7 +85,8 @@ where
             )
             .fetch_optional(&***db_pool)
             .await
-            .unwrap().unwrap();
+            .unwrap()
+            .unwrap();
             let account_id = session_row.account_id;
             let updated_session_row = query!(
                 r#"
@@ -97,11 +95,15 @@ where
                 RETURNING expires_at
                 "#,
                 session_id
-            ).fetch_one(&***db_pool).await.unwrap();
+            )
+            .fetch_one(&***db_pool)
+            .await
+            .unwrap();
 
             req.extensions_mut().insert(token);
             req.extensions_mut().insert(account_id);
-            req.extensions_mut().insert(updated_session_row.expires_at.as_utc().unix_timestamp());
+            req.extensions_mut()
+                .insert(updated_session_row.expires_at.as_utc().unix_timestamp());
 
             None
         }
@@ -118,7 +120,10 @@ where
                     DELETE FROM session
                     WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '40 minutes';
                     "#
-                ).execute(&***db_pool).await.unwrap();
+                )
+                .execute(&***db_pool)
+                .await
+                .unwrap();
             }
             //call other middleware and handler and get the response
             let res = srv.call(req).await?;
