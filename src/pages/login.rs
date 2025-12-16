@@ -26,8 +26,7 @@ pub fn Login(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
-    let lang = use_context::<ReadSignal<String>>()
-        .expect("lang missing from context");
+    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
     let orig_url = use_query_map()
         .get_untracked()
         .get("orig_url")
@@ -226,6 +225,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                         let claim = JwtClaim::new(session_row_record.id);
                         let token = encode(&Header::default(), &claim, &jwt_keys.encode_key)
                             .expect("JWT encode failed");
+                        log!(Level::Info, "Logged in: {}", params.username);
                         Ok(ApiResponse {
                             error: None,
                             expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),

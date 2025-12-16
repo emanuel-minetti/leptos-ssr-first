@@ -1,9 +1,10 @@
 use crate::api::error::ApiError;
 use crate::api::jwt::{get_jwt_validation, JwtClaim, JwtKeys};
+use crate::api::response::ApiResponse;
 use actix_web::body::{EitherBody, MessageBody};
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::web::Data;
-use actix_web::{Error, HttpMessage};
+use actix_web::{Error, HttpMessage, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 use jsonwebtoken::decode;
 use log::{log, Level};
@@ -11,6 +12,7 @@ use regex::Regex;
 use sqlx::{query, Pool, Postgres};
 use std::future::{ready, Ready};
 use std::rc::Rc;
+use std::time::SystemTime;
 
 pub struct Authorisation;
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
@@ -138,7 +140,7 @@ where
             // authenticate
             let session_row = match query!(
                 r#"
-                SELECT account_id FROM session WHERE id = $1
+                SELECT account_id, expires_at FROM session WHERE id = $1
                 "#,
                 session_id
             )
@@ -162,6 +164,15 @@ where
                     Some(row) => row,
                 },
             };
+            //check whether expired
+            if session_row.expires_at.as_utc().unix_timestamp()
+                < SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs() as i64
+            {
+                return Some(ApiError::Expired);
+            }
 
             let account_id = session_row.account_id;
             let updated_session_row_result = query!(
@@ -204,18 +215,28 @@ where
                 let _ = query!(
                     r#"
                     DELETE FROM session
-                    WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '40 minutes';
+                    WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '50 minutes';
                     "#
                 )
                 .execute(&***db_pool)
                 .await
-                    //TODO review
                 .unwrap();
 
                 let auth_option = authorize(&req, db_pool).await;
-                match auth_option{
-                    None => {}
-                    Some(_) => {}
+                match auth_option {
+                    Some(err) => {
+                        let new_body = ApiResponse {
+                            expires_at: 0,
+                            token: "".to_string(),
+                            error: Some(err),
+                            data: (),
+                        };
+                        let new_http_response = HttpResponse::Ok().json(new_body);
+                        let new_service_response =
+                            ServiceResponse::new(req.request().clone(), new_http_response);
+                        return Ok(new_service_response.map_into_right_body());
+                    }
+                    None => (),
                 }
             }
             //call other middleware and handler and get the response
