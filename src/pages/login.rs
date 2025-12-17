@@ -216,7 +216,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                 // hinder timing attacks
                 let _ = verify(
                     "",
-                    // a constant took from example configuration
+                    // `hash` is a constant took from the example configuration
                     // it's meant to tm make sure that "" in unequal to "password"
                     "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
                 ).ok();
