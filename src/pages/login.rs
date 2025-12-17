@@ -12,11 +12,27 @@ use leptos::reactive::spawn_local;
 use leptos::{component, server, IntoView};
 use leptos_router::hooks::use_query_map;
 use serde::{Deserialize, Serialize};
+use crate::api::error::ApiError;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
     username: String,
     password: String,
+}
+#[cfg(feature = "ssr")]
+impl LoginCallParams {
+    fn validated(&self) -> LoginCallParams {
+        let new_username = if self.username.len() > 100 {
+            "".to_string()
+        } else { self.username.clone().to_string() };
+        let new_password = if self.password.len() > 100 {
+            "".to_string()
+        } else { self.password.trim().to_string() };
+
+        LoginCallParams {
+            username: new_username,
+            password: new_password }
+    }
 }
 
 #[component]
@@ -31,7 +47,6 @@ pub fn Login(
         .get_untracked()
         .get("orig_url")
         .unwrap_or_else(|| "/".to_string());
-    let orig_url_clone = orig_url.clone();
 
     Effect::new(move || {
         let orig_url_clone = orig_url.clone();
@@ -83,11 +98,14 @@ pub fn Login(
                         .child(t!(i18n, redirecting))
                         .into_any();
                 } else {
-                    let err_str = response.error.unwrap().to_string();
-                    let error_message = if err_str == "Invalid username or password" {
-                        t!(i18n, invalidCredentials).into_any()
-                    } else {
-                        t!(i18n, serverError, error = err_str).into_any()
+                    let error_message = match response.error.unwrap() {
+                        ApiError::InvalidCredentials => {
+                            t!(i18n, invalidCredentials).into_any()
+                        }
+                        _ => {
+                            t!(i18n, serverError, error = "").into_any()
+                        }
+
                     };
                     div()
                         .class("alert alert-danger")
@@ -146,12 +164,6 @@ pub fn Login(
                                 ))
                             },
                             {
-                                input()
-                                    .r#type("hidden")
-                                    .name("params[orig_url]")
-                                    .value(orig_url_clone.clone())
-                            },
-                            {
                                 button()
                                     .r#type("submit")
                                     .class("btn btn-primary")
@@ -186,6 +198,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         }
         Some(db_pool) => db_pool,
     };
+    let params = params.validated();
     let account_row_result = query!(
         r#"
             SELECT pw_hash, id
@@ -203,13 +216,19 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                 // hinder timing attacks
                 let _ = verify(
                     "",
+                    // a constant took from example configuration
+                    // it's meant to tm make sure that "" in unequal to "password"
                     "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
-                )
-                .unwrap();
+                ).ok();
                 return_early(ApiError::InvalidCredentials)
             }
             Some(account_row_record) => {
-                if !verify(&params.password, &account_row_record.pw_hash).unwrap() {
+                let verify_result = verify(&params.password, &account_row_record.pw_hash);
+                let verified = match verify_result {
+                    Ok(ret) => {ret}
+                    Err(_) => {false}
+                };
+                if !verified {
                     return return_early(ApiError::InvalidCredentials);
                 }
                 let session_row = query!(
@@ -267,10 +286,14 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
         "#,
         account_id
     );
+    let validated_orig_url = match orig_url.strip_prefix("/") {
+        None => {"/"}
+        Some(url) => {url}
+    };
     let user_row = user_row_result
         .fetch_one(&**use_context::<Data<Pool<Postgres>>>().unwrap())
         .await?;
-    redirect(orig_url.as_str());
+    redirect(validated_orig_url);
 
     Ok(ApiResponse {
         expires_at,
