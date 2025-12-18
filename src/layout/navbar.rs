@@ -28,6 +28,7 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                 },
                 { NavBarLoginInfo() },
                 {
+                    //TODO remove focus if changed
                     form().class("d-inline-flex p-2").child(
                         select()
                             .class("form-select")
@@ -121,7 +122,6 @@ pub async fn set_lang(lang: Language) -> Result<ApiResponse<User>, ServerFnError
     .fetch_one(&**db_pool)
     .await?;
 
-    //TODO remove focus
     Ok(ApiResponse {
         expires_at,
         token,

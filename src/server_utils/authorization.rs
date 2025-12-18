@@ -8,17 +8,12 @@ use actix_web::{Error, HttpMessage, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 use jsonwebtoken::decode;
 use log::{log, Level};
-use regex::Regex;
 use sqlx::{query, Pool, Postgres};
 use std::future::{ready, Ready};
 use std::rc::Rc;
-use std::sync::OnceLock;
-use std::time::SystemTime;
 
 pub struct Authorisation;
 
-const BEARER_VALIDATION_REGEX: &str = r"Bearer (.+)";
-static BEARER_REGEX: OnceLock<Regex> = OnceLock::new();
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
@@ -59,16 +54,16 @@ where
         // to use it in the closure for async function calls
         let srv = self.service.clone();
         // grab url path from request to care for 'login'
-        let url_path = req.path().split("/").last().unwrap().to_owned();
+        let is_login = req.path().starts_with("/api/login");
 
-        async fn authorize(
-            req: &ServiceRequest,
-            db_pool: &Data<Pool<Postgres>>,
-        ) -> Option<ApiError> {
+        async fn authorize(req: &ServiceRequest, db_pool: &Pool<Postgres>) -> Option<ApiError> {
             let jwt_keys = match req.app_data::<Data<JwtKeys>>() {
                 None => {
                     log!(Level::Error, "No JWT keys found in request: {:?}", req);
-                    panic!("No JWT keys found in request: {:?}", req);
+                    return Some(ApiError::UnexpectedError(format!(
+                        "No JWT keys found in request: {:?}",
+                        req
+                    )));
                 }
                 Some(keys) => keys,
             };
@@ -82,7 +77,7 @@ where
                         log!(Level::Trace, "Empty Authorization header: {:?}", req);
                         return Some(ApiError::Unauthorized);
                     } else {
-                        match header_value.to_owned().to_str() {
+                        match header_value.to_str() {
                             Err(_) => {
                                 log!(
                                     Level::Trace,
@@ -91,34 +86,21 @@ where
                                 );
                                 return Some(ApiError::Unauthorized);
                             }
-                            Ok(value) => value.to_string(),
+                            Ok(value) => value,
                         }
                     }
                 }
             };
-            let token_matcher =
-                BEARER_REGEX.get_or_init(|| Regex::new(BEARER_VALIDATION_REGEX).unwrap());
-            let token_capture = match token_matcher.captures(&auth_header) {
-                None => {
-                    log!(
-                        Level::Trace,
-                        "Authorization header has no Bearer token: {:?}",
-                        req
-                    );
-                    return Some(ApiError::Unauthorized);
-                }
-                Some(capture) => capture,
-            };
-            let token = match token_capture.get(1) {
-                None => {
-                    log!(
-                        Level::Trace,
-                        "Authorization header has an empty Bearer token: {:?}",
-                        req
-                    );
-                    return Some(ApiError::Unauthorized);
-                }
-                Some(capture) => capture.as_str().to_string(),
+            let bearer_matcher = "Bearer ";
+            let token = if !auth_header.starts_with(bearer_matcher) {
+                log!(
+                    Level::Trace,
+                    "Authorization header has no Bearer token: {:?}",
+                    req
+                );
+                return Some(ApiError::Unauthorized);
+            } else {
+                &auth_header[bearer_matcher.len()..]
             };
             let token_decode_result =
                 decode::<JwtClaim>(&token, &jwt_keys.decode_key, &get_jwt_validation());
@@ -133,7 +115,6 @@ where
                 }
                 Ok(claim) => claim,
             };
-
             let session_id = match session_id_claim.claims.try_into_uuid() {
                 Err(_) => {
                     log!(Level::Trace, "Payload is not an UUID: {:?}", req);
@@ -149,7 +130,7 @@ where
                 "#,
                 session_id
             )
-            .fetch_optional(&***db_pool)
+            .fetch_optional(db_pool)
             .await
             {
                 Err(err) => {
@@ -170,15 +151,9 @@ where
                 },
             };
             //check whether expired
-            if session_row.expires_at.as_utc().unix_timestamp()
-                < SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs() as i64
-            {
+            if session_row.expires_at.as_utc().unix_timestamp() < chrono::Utc::now().timestamp() {
                 return Some(ApiError::Expired);
             }
-
             let account_id = session_row.account_id;
             let updated_session_row_result = query!(
                 r#"
@@ -188,9 +163,8 @@ where
                 "#,
                 session_id
             )
-            .fetch_one(&***db_pool)
+            .fetch_one(db_pool)
             .await;
-
             let updated_session_row = match updated_session_row_result {
                 Err(_) => {
                     log!(Level::Warn, "Couldn't update session row: \nreq: {:?}", req);
@@ -199,7 +173,7 @@ where
                 Ok(row) => row,
             };
 
-            req.extensions_mut().insert(token);
+            req.extensions_mut().insert(token.to_string());
             req.extensions_mut().insert(account_id);
             req.extensions_mut()
                 .insert(updated_session_row.expires_at.as_utc().unix_timestamp());
@@ -208,14 +182,24 @@ where
         }
 
         Box::pin(async move {
-            if !url_path.starts_with("login") {
+            if !is_login {
                 let db_pool = match req.app_data::<Data<Pool<Postgres>>>() {
                     None => {
                         let error_msg = "No DB pool found in request";
                         log!(Level::Error, "{}: {:?}", error_msg, req);
-                        panic!("No DB pool found in request: {:?}", req);
+                        let new_body = ApiResponse {
+                            expires_at: 0,
+                            token: "".to_string(),
+                            error: Some(ApiError::DBConnectionError),
+                            data: (),
+                        };
+                        let new_http_response = HttpResponse::Ok().json(new_body);
+                        let new_service_response =
+                            ServiceResponse::new(req.request().clone(), new_http_response);
+
+                        return Ok(new_service_response.map_into_right_body());
                     }
-                    Some(pool) => pool,
+                    Some(pool) => pool.get_ref(),
                 };
                 // remove outdated
                 let _ = query!(
@@ -224,7 +208,7 @@ where
                     WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '50 minutes';
                     "#
                 )
-                .execute(&***db_pool)
+                .execute(db_pool)
                 .await
                 .unwrap();
 
@@ -248,7 +232,7 @@ where
             //call other middleware and handler and get the response
             let res = srv.call(req).await?;
             let _request = res.request().clone();
-            if !url_path.starts_with("login") {
+            if !is_login {
                 //log!(Level::Info, "Middleware called after server fn");
             }
             Ok(res.map_into_left_body())
