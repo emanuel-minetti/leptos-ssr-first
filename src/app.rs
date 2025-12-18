@@ -170,7 +170,7 @@ pub fn App() -> impl IntoView {
                                                             let params = use_params_map().get();
                                                             let (_, orig_url) =
                                                                 params.into_iter().last().unwrap();
-                                                            format!("/login?orig_url={}", orig_url)
+                                                            format!("/login?orig_url=/{}", orig_url)
                                                         })
                                                         .condition(move || is_logged_in())
                                                         .build(),

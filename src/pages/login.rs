@@ -1,3 +1,4 @@
+use crate::api::error::ApiError;
 use crate::api::response::ApiResponse;
 use crate::i18n::*;
 use crate::model::user::User;
@@ -10,9 +11,10 @@ use leptos::html::*;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos::{component, server, IntoView};
-use leptos_router::hooks::use_query_map;
+use leptos_router::hooks::{use_navigate, use_query_map};
+use leptos_router::NavigateOptions;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
-use crate::api::error::ApiError;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
@@ -24,14 +26,19 @@ impl LoginCallParams {
     fn validated(&self) -> LoginCallParams {
         let new_username = if self.username.len() > 100 {
             "".to_string()
-        } else { self.username.clone().to_string() };
+        } else {
+            self.username.clone()
+        };
         let new_password = if self.password.len() > 100 {
             "".to_string()
-        } else { self.password.trim().to_string() };
+        } else {
+            self.password.to_string()
+        };
 
         LoginCallParams {
             username: new_username,
-            password: new_password }
+            password: new_password,
+        }
     }
 }
 
@@ -47,15 +54,29 @@ pub fn Login(
         .get_untracked()
         .get("orig_url")
         .unwrap_or_else(|| "/".to_string());
+    let navigate = use_navigate();
+    let url_validation_matcher = Regex::new(r"^(/[^/].*)$").unwrap();
 
     Effect::new(move || {
-        let orig_url_clone = orig_url.clone();
         if let Some(Ok(response)) = login.value().get() {
             if response.error.is_none() {
                 set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
 
+                let orig_url_clone = orig_url.clone();
+                let url_capture = match url_validation_matcher.captures(&orig_url_clone) {
+                    None => "/".to_string(),
+                    Some(capture) => capture.get(1).unwrap().as_str().to_string(),
+                };
+                let validated_orig_url = if url_capture.contains("//") {
+                    "/".to_string()
+                } else {
+                    url_capture
+                };
+
+                let navigate = navigate.clone();
+
                 spawn_local(async move {
-                    if let Ok(res) = get_user(orig_url_clone).await {
+                    if let Ok(res) = get_user().await {
                         let server_lang = res.data.preferred_language;
                         // shouldn't rerun on changes of lang
                         let user_lang = lang.get_untracked();
@@ -68,6 +89,15 @@ pub fn Login(
                             name: res.data.name,
                             preferred_language: server_lang,
                         }));
+                        navigate(
+                            &validated_orig_url,
+                            NavigateOptions {
+                                resolve: false,
+                                replace: false,
+                                scroll: true,
+                                state: Default::default(),
+                            },
+                        );
                     }
                 })
             }
@@ -99,13 +129,8 @@ pub fn Login(
                         .into_any();
                 } else {
                     let error_message = match response.error.unwrap() {
-                        ApiError::InvalidCredentials => {
-                            t!(i18n, invalidCredentials).into_any()
-                        }
-                        _ => {
-                            t!(i18n, serverError, error = "").into_any()
-                        }
-
+                        ApiError::InvalidCredentials => t!(i18n, invalidCredentials).into_any(),
+                        _ => t!(i18n, serverError, error = "").into_any(),
                     };
                     div()
                         .class("alert alert-danger")
@@ -213,21 +238,19 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
     match account_row_result {
         Ok(account_row) => match account_row {
             None => {
-                // hinder timing attacks
+                // hinder timing attacks.
+                // `hash` is a constant took from the example configuration.
+                // it's meant to make sure that "" is unequal to "password".
                 let _ = verify(
-                    "",
-                    // `hash` is a constant took from the example configuration
-                    // it's meant to tm make sure that "" in unequal to "password"
+                    &params.password,
                     "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
-                ).ok();
+                )
+                .ok();
                 return_early(ApiError::InvalidCredentials)
             }
             Some(account_row_record) => {
                 let verify_result = verify(&params.password, &account_row_record.pw_hash);
-                let verified = match verify_result {
-                    Ok(ret) => {ret}
-                    Err(_) => {false}
-                };
+                let verified = verify_result.unwrap_or_else(|_| false);
                 if !verified {
                     return return_early(ApiError::InvalidCredentials);
                 }
@@ -264,12 +287,11 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
 }
 
 #[server(client = crate::client::AddAuthHeaderClient)]
-pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnError> {
+pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
     use crate::model::language::Language;
     use actix_web::web::Data;
     use actix_web::HttpMessage;
     use leptos_actix::extract;
-    use leptos_actix::redirect;
     use sqlx::query;
     use sqlx::types::Uuid;
     use sqlx::{Pool, Postgres};
@@ -286,14 +308,9 @@ pub async fn get_user(orig_url: String) -> Result<ApiResponse<User>, ServerFnErr
         "#,
         account_id
     );
-    let validated_orig_url = match orig_url.strip_prefix("/") {
-        None => {"/"}
-        Some(url) => {url}
-    };
     let user_row = user_row_result
         .fetch_one(&**use_context::<Data<Pool<Postgres>>>().unwrap())
         .await?;
-    redirect(validated_orig_url);
 
     Ok(ApiResponse {
         expires_at,
