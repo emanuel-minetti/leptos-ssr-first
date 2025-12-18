@@ -1,5 +1,5 @@
 {
-  "session_secret": [229, 84, 94, 175, 10, 21, 99, 226, 105, 37, 151, 121, 241, 201, 64, 176],
+  "session_secret": <Your session secret (as vec[u8]) here>,
   "database": {
     "host": "localhost",
     "port": 5432,
