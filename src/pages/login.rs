@@ -15,6 +15,7 @@ use leptos_router::hooks::{use_navigate, use_query_map};
 use leptos_router::NavigateOptions;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::sync::OnceLock;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
@@ -42,6 +43,9 @@ impl LoginCallParams {
     }
 }
 
+const URL_VALIDATION_REGEX: &str = r"^(/[^/].*)$";
+static URL_REGEX: OnceLock<Regex> = OnceLock::new();
+
 #[component]
 pub fn Login(
     set_user: WriteSignal<Option<User>>,
@@ -55,7 +59,8 @@ pub fn Login(
         .get("orig_url")
         .unwrap_or_else(|| "/".to_string());
     let navigate = use_navigate();
-    let url_validation_matcher = Regex::new(r"^(/[^/].*)$").unwrap();
+    let url_validation_matcher =
+        URL_REGEX.get_or_init(|| Regex::new(URL_VALIDATION_REGEX).unwrap());
 
     Effect::new(move || {
         if let Some(Ok(response)) = login.value().get() {
@@ -153,8 +158,6 @@ pub fn Login(
                 ActionFormProps::builder()
                     .action(login)
                     .children(ToChildren::to_children(move || {
-                        let i18n = use_i18n();
-
                         (
                             div().class("mb-3 col-xs-1 col-xl-2").child((
                                 {
