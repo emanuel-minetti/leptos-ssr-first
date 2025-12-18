@@ -12,9 +12,13 @@ use regex::Regex;
 use sqlx::{query, Pool, Postgres};
 use std::future::{ready, Ready};
 use std::rc::Rc;
+use std::sync::OnceLock;
 use std::time::SystemTime;
 
 pub struct Authorisation;
+
+const BEARER_VALIDATION_REGEX: &str = r"Bearer (.+)";
+static BEARER_REGEX: OnceLock<Regex> = OnceLock::new();
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
@@ -92,7 +96,8 @@ where
                     }
                 }
             };
-            let token_matcher = Regex::new(r"Bearer (.+)").unwrap();
+            let token_matcher =
+                BEARER_REGEX.get_or_init(|| Regex::new(BEARER_VALIDATION_REGEX).unwrap());
             let token_capture = match token_matcher.captures(&auth_header) {
                 None => {
                     log!(
@@ -212,6 +217,7 @@ where
                     }
                     Some(pool) => pool,
                 };
+                // remove outdated
                 let _ = query!(
                     r#"
                     DELETE FROM session
