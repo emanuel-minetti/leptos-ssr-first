@@ -202,6 +202,7 @@ where
                     Some(pool) => pool.get_ref(),
                 };
                 // remove outdated
+                //TODO: Consider moving this to a background task that runs once every hour
                 let _ = query!(
                     r#"
                     DELETE FROM session
