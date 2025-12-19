@@ -7,6 +7,7 @@ pub struct Settings {
     pub database: DatabaseSettings,
     pub log: LogSettings,
     pub session_secret: Vec<u8>,
+    pub dummy_bcrypt_hash: String,
 }
 
 #[derive(Deserialize)]

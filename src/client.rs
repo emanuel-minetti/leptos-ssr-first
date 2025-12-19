@@ -1,10 +1,10 @@
-use std::future::Future;
 use futures_util::{Sink, Stream};
 use server_fn::client::browser::BrowserClient;
 use server_fn::client::Client;
 use server_fn::error::FromServerFnError;
 use server_fn::request::browser::BrowserRequest;
 use server_fn::response::browser::BrowserResponse;
+use std::future::Future;
 
 pub struct AddAuthHeaderClient;
 
@@ -17,10 +17,13 @@ where
     type Request = BrowserRequest;
     type Response = BrowserResponse;
 
-    fn send(req: Self::Request) -> impl Future<Output=Result<Self::Response, E>> + Send {
+    fn send(req: Self::Request) -> impl Future<Output = Result<Self::Response, E>> + Send {
         let (token, _) = crate::utils::get_login_data_from_session_storage();
         let headers = req.headers();
-        headers.append("Authorization", format!("Bearer {}", token.as_str()).as_str());
+        headers.append(
+            "Authorization",
+            format!("Bearer {}", token.as_str()).as_str(),
+        );
         <BrowserClient as Client<E, IS, OS>>::send(req)
     }
 
@@ -29,10 +32,7 @@ where
     ) -> impl Future<
         Output = Result<
             (
-                impl Stream<
-                    Item = Result<server_fn::Bytes, server_fn::Bytes>,
-                > + Send
-                + 'static,
+                impl Stream<Item = Result<server_fn::Bytes, server_fn::Bytes>> + Send + 'static,
                 impl Sink<server_fn::Bytes> + Send + 'static,
             ),
             E,

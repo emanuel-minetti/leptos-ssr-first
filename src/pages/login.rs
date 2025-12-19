@@ -226,6 +226,14 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         }
         Some(db_pool) => db_pool,
     };
+    let dummy_hash_result = use_context::<Data<String>>();
+    let dummy_hash = match dummy_hash_result {
+        None => {
+            log!(Level::Warn, "No dummy hash found in context");
+            return return_early(ApiError::UnexpectedError("Configuration Error".to_string()));
+        }
+        Some(dummy_hash) => dummy_hash
+    };
     let params = params.validated();
     let account_row_result = query!(
         r#"
@@ -242,11 +250,9 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         Ok(account_row) => match account_row {
             None => {
                 // hinder timing attacks.
-                // `hash` is a constant took from the example configuration.
-                // it's meant to make sure that "" is unequal to "password".
                 let _ = verify(
                     &params.password,
-                    "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
+                    dummy_hash.as_str()
                 )
                 .ok();
                 return_early(ApiError::InvalidCredentials)

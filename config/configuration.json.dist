@@ -1,5 +1,6 @@
 {
   "session_secret": <Your session secret (as vec[u8]) here>,
+  "dummy_bcrypt_hash": "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
   "database": {
     "host": "localhost",
     "port": 5432,
