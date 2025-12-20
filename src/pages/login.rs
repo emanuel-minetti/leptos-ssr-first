@@ -232,7 +232,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
             log!(Level::Warn, "No dummy hash found in context");
             return return_early(ApiError::UnexpectedError("Configuration Error".to_string()));
         }
-        Some(dummy_hash) => dummy_hash
+        Some(dummy_hash) => dummy_hash,
     };
     let params = params.validated();
     let account_row_result = query!(
@@ -250,16 +250,15 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         Ok(account_row) => match account_row {
             None => {
                 // hinder timing attacks.
-                let _ = verify(
-                    &params.password,
-                    dummy_hash.as_str()
-                )
-                .ok();
+                let _ = verify(&params.password, dummy_hash.as_str()).ok();
                 return_early(ApiError::InvalidCredentials)
             }
             Some(account_row_record) => {
                 let verify_result = verify(&params.password, &account_row_record.pw_hash);
-                let verified = verify_result.unwrap_or_else(|_| false);
+                let verified = verify_result.unwrap_or_else(|e| {
+                    log!(Level::Warn, "Error verifying password: {}", e);
+                    false
+                });
                 if !verified {
                     return return_early(ApiError::InvalidCredentials);
                 }
