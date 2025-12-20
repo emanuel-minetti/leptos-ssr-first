@@ -150,10 +150,11 @@ where
                     Some(row) => row,
                 },
             };
-            //check whether expired
+            // check whether expired
             if session_row.expires_at.as_utc().unix_timestamp() < chrono::Utc::now().timestamp() {
                 return Some(ApiError::Expired);
             }
+            // now we know the session is authenticated and not expired, so update session
             let account_id = session_row.account_id;
             let updated_session_row_result = query!(
                 r#"
