@@ -1,9 +1,10 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
 use leptos_ssr_first::api;
+use leptos_ssr_first::server_utils::background_task;
 
 #[cfg(feature = "ssr")]
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     use actix_files::Files;
     use actix_web::*;
@@ -31,6 +32,10 @@ async fn main() -> std::io::Result<()> {
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
         .expect("Couldn't connect to database.");
+    let _scheduler = match background_task::setup_scheduler(db_pool.clone()).await {
+        Ok(scheduler) => scheduler,
+        Err(e) => panic!("Failed to setup scheduler: {}", e),
+    };
     //LSF CODE END
 
     HttpServer::new(move || {

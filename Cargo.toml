@@ -28,6 +28,8 @@ config = { version = "0.15.17",optional = true }
 chrono = "0.4.42"
 jsonwebtoken = {version = "10.2.0", default-features = false, features = ["rust_crypto"], optional = true}
 regex = "1.12.2"
+tokio-cron-scheduler = {version = "0.15.1", optional = true}
+tokio = { version = "1.48.0", optional = true, features = ["rt", "rt-multi-thread", "macros"] }
 
 [build-dependencies]
 leptos_i18n_build = "0.6.0-rc.2"
@@ -61,6 +63,8 @@ ssr = [
   "config",
   "log/std",
   "jsonwebtoken",
+  "tokio-cron-scheduler",
+  "tokio"
 ]
 
 # Defines a size-optimized profile for the WASM bundle in release mode

@@ -201,17 +201,6 @@ where
                     }
                     Some(pool) => pool.get_ref(),
                 };
-                // remove outdated
-                //TODO: Consider moving this to a background task that runs once every hour
-                let _ = query!(
-                    r#"
-                    DELETE FROM session
-                    WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '50 minutes';
-                    "#
-                )
-                .execute(db_pool)
-                .await
-                .unwrap();
 
                 let auth_option = authorize(&req, db_pool).await;
                 match auth_option {
