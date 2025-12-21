@@ -24,22 +24,15 @@ pub struct LoginCallParams {
 }
 #[cfg(feature = "ssr")]
 impl LoginCallParams {
-    fn validated(&self) -> LoginCallParams {
-        let new_username = if self.username.len() > 100 {
-            "".to_string()
-        } else {
-            self.username.clone()
+    fn validated(&self) -> Option<LoginCallParams> {
+        if self.username.len() > 20 {
+            return None;
         };
-        let new_password = if self.password.len() > 100 {
-            "".to_string()
-        } else {
-            self.password.to_string()
+        if self.password.len() > 32 {
+            return None;
         };
 
-        LoginCallParams {
-            username: new_username,
-            password: new_password,
-        }
+        Some(self.clone())
     }
 }
 
@@ -234,7 +227,13 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         }
         Some(dummy_hash) => dummy_hash,
     };
-    let params = params.validated();
+    let params = match params.validated() {
+        None => {
+            log!(Level::Warn, "Invalid login params");
+            return return_early(ApiError::InvalidCredentials);
+        }
+        Some(params) => {params}
+    };
     let account_row_result = query!(
         r#"
             SELECT pw_hash, id
