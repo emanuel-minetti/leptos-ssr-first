@@ -145,14 +145,14 @@ where
                 }
                 Ok(session_id_option) => match session_id_option {
                     None => {
-                        log!(Level::Trace, "{}", get_info(req, "No session found:".to_string()));
+                        log!(Level::Warn, "{}", get_info(req, "No session found:".to_string()));
                         return Some(ApiError::Unauthorized);
                     }
                     Some(row) => row,
                 },
             };
             // check whether expired
-            if session_row.expires_at.as_utc().unix_timestamp() < chrono::Utc::now().timestamp() {
+            if session_row.expires_at.as_utc().unix_timestamp() < Utc::now().timestamp() {
                 return Some(ApiError::Expired);
             }
             // now we know the session is authenticated and not expired, so update session
