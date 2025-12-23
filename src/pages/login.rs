@@ -17,6 +17,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
+const USERNAME_MAX_LENGTH: u8 = 20;
+const PASSWORD_MAX_LENGTH: u8 = 32;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LoginCallParams {
     username: String,
@@ -25,10 +28,16 @@ pub struct LoginCallParams {
 #[cfg(feature = "ssr")]
 impl LoginCallParams {
     fn validated(&self) -> Option<LoginCallParams> {
-        if self.username.len() > 20 {
+        let username_graphems_length = self.username.chars().count();
+        if <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
+            > USERNAME_MAX_LENGTH
+        {
             return None;
         };
-        if self.password.len() > 32 {
+        let password_graphems_length = self.password.chars().count();
+        if <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
+            > PASSWORD_MAX_LENGTH
+        {
             return None;
         };
 
@@ -165,6 +174,8 @@ pub fn Login(
                                         .class("form-control")
                                         .id("ref1")
                                         .name("params[username]")
+                                        .required(true)
+                                        .maxlength(USERNAME_MAX_LENGTH as i64)
                                 },
                             )),
                             {
@@ -232,7 +243,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
             log!(Level::Warn, "Invalid login params");
             return return_early(ApiError::InvalidCredentials);
         }
-        Some(params) => {params}
+        Some(params) => params,
     };
     let account_row_result = query!(
         r#"
