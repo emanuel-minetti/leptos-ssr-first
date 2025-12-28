@@ -13,5 +13,7 @@
   "loading": "Warten auf Serverantwort...",
   "invalidCredentials": "Ungültiger Benutzername oder Passwort",
   "serverError": "Server Fehler: {{ error }}",
-  "redirecting": "Weiterleitung ..."
+  "redirecting": "Weiterleitung ...",
+  "usernameRequired": "Der Benutzername ist erforderlich.",
+  "passwordRequired": "Das Passwort ist erforderlich."
 }

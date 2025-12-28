@@ -5,17 +5,19 @@ use crate::model::user::User;
 use crate::utils::{
     set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage,
 };
-use leptos::children::ToChildren;
 use leptos::form::ActionForm;
 use leptos::html::*;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
+use leptos::tachys::html::event;
 use leptos::{component, server, IntoView};
 use leptos_router::hooks::{use_navigate, use_query_map};
 use leptos_router::NavigateOptions;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
+use wasm_bindgen::JsCast;
+use web_sys::SubmitEvent;
 
 const USERNAME_MAX_LENGTH: u8 = 20;
 const PASSWORD_MAX_LENGTH: u8 = 32;
@@ -153,6 +155,39 @@ pub fn Login(
         }
     };
 
+    let validated_on_client = move |ev: SubmitEvent| {
+        let data = Login::from_event(&ev);
+        if data.is_err() {
+            ev.prevent_default();
+        }
+        else {
+            let data = data.unwrap().clone();
+            let username = data.username.clone();
+            let username_graphems_length = username.chars().count();
+            if username.is_empty() || <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
+                > USERNAME_MAX_LENGTH {
+                // TODO: Get a ref to the input element and set class `:invalid` to it
+                // TODO: Review code duplication
+                web_sys::console::log_1(&"Submit prevented".into());
+                ev.prevent_default();
+            }
+            let password = data.password.clone();
+            let password_graphems_length = password.chars().count();
+            if password.is_empty() || <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
+                > PASSWORD_MAX_LENGTH {
+                web_sys::console::log_1(&"Submit prevented".into());
+                ev.prevent_default();
+            }
+            let form: web_sys::HtmlFormElement = ev.target().unwrap().unchecked_into();
+            if !form.check_validity() {
+                ev.prevent_default();
+                ev.stop_propagation()
+            }
+
+            form.class_list().add_1("was-validated").unwrap();
+        }
+    };
+
     div()
         .class("container")
         .child(({ h1().child(t![i18n, login]) }, {
@@ -177,6 +212,11 @@ pub fn Login(
                                         .required(true)
                                         .maxlength(USERNAME_MAX_LENGTH as i64)
                                 },
+                                {
+                                    div()
+                                        .class("invalid-feedback")
+                                        .child(t!(i18n, usernameRequired))
+                                },
                             )),
                             {
                                 div().class("mb-3 col-xs-1 col-xl-2").child((
@@ -192,6 +232,13 @@ pub fn Login(
                                             .class("form-control")
                                             .id("ref2")
                                             .name("params[password]")
+                                            .required(true)
+                                            .maxlength(PASSWORD_MAX_LENGTH as i64)
+                                    },
+                                    {
+                                        div()
+                                            .class("invalid-feedback")
+                                            .child(t!(i18n, passwordRequired))
                                     },
                                 ))
                             },
@@ -206,6 +253,8 @@ pub fn Login(
                     }))
                     .build(),
             )
+            .attr("novalidate", "true")
+                .add_any_attr(event::on(event::capture(event::submit), validated_on_client))
         }))
 }
 
