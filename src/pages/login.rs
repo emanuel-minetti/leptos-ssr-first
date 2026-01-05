@@ -186,28 +186,6 @@ pub fn Login(
                     }
                 },
             }
-            // let username = data.username.clone();
-            // let username_graphems_length = username.chars().count();
-            // if username.is_empty() || <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
-            //     > USERNAME_MAX_LENGTH {
-            //
-            //     web_sys::console::log_1(&"Submit prevented".into());
-            //     ev.prevent_default();
-            // }
-            // let password = data.password.clone();
-            // let password_graphems_length = password.chars().count();
-            // if password.is_empty() || <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
-            //     > PASSWORD_MAX_LENGTH {
-            //     web_sys::console::log_1(&"Submit prevented".into());
-            //     ev.prevent_default();
-            // }
-
-            // if !form.check_validity() {
-            //     ev.prevent_default();
-            //     ev.stop_propagation()
-            // }
-            //
-            // form.class_list().add_1("was-validated").unwrap();
         }
     };
 
