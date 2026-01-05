@@ -35,19 +35,18 @@ enum LoginCallParamsError {
 
 impl LoginCallParams {
     fn validated(&self) -> Result<LoginCallParams, LoginCallParamsError> {
-        // TODO: Review code duplication
         let username = &self.username;
         let username_graphems_length = username.chars().count();
-        if username.is_empty() || <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
-            > USERNAME_MAX_LENGTH
-        {
+        let username_graphems_length_u8 =
+            <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX);
+        if username.is_empty() || username_graphems_length_u8 > USERNAME_MAX_LENGTH {
             return Err(LoginCallParamsError::InvalidUsername);
         };
         let password = &self.password;
         let password_graphems_length = password.chars().count();
-        if password.is_empty() || <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
-            > PASSWORD_MAX_LENGTH
-        {
+        let password_graphems_length_u8 =
+            <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX);
+        if password.is_empty() || password_graphems_length_u8 > PASSWORD_MAX_LENGTH {
             return Err(LoginCallParamsError::InvalidPassword);
         };
 
@@ -167,28 +166,25 @@ pub fn Login(
         let data = Login::from_event(&ev);
         if data.is_err() {
             ev.prevent_default();
-        }
-        else {
+        } else {
             let data = data.unwrap().clone();
             let form: web_sys::HtmlFormElement = ev.target().unwrap().unchecked_into();
             match data.validated() {
                 Ok(_) => {}
-                Err(error) => {
-                    match error {
-                        LoginCallParamsError::InvalidUsername => {
-                            let input_div = form.children().get_with_index(0).unwrap();
-                            let input = input_div.children().get_with_index(1).unwrap();
-                            input.class_list().add_1("is-invalid").unwrap();
-                            ev.prevent_default();
-                        }
-                        LoginCallParamsError::InvalidPassword => {
-                            let input_div = form.children().get_with_index(1).unwrap();
-                            let input = input_div.children().get_with_index(1).unwrap();
-                            input.class_list().add_1("is-invalid").unwrap();
-                            ev.prevent_default();
-                        }
+                Err(error) => match error {
+                    LoginCallParamsError::InvalidUsername => {
+                        let input_div = form.children().get_with_index(0).unwrap();
+                        let input = input_div.children().get_with_index(1).unwrap();
+                        input.class_list().add_1("is-invalid").unwrap();
+                        ev.prevent_default();
                     }
-                }
+                    LoginCallParamsError::InvalidPassword => {
+                        let input_div = form.children().get_with_index(1).unwrap();
+                        let input = input_div.children().get_with_index(1).unwrap();
+                        input.class_list().add_1("is-invalid").unwrap();
+                        ev.prevent_default();
+                    }
+                },
             }
             // let username = data.username.clone();
             // let username_graphems_length = username.chars().count();
@@ -279,7 +275,10 @@ pub fn Login(
                     .build(),
             )
             .attr("novalidate", "true")
-                .add_any_attr(event::on(event::capture(event::submit), validated_on_client))
+            .add_any_attr(event::on(
+                event::capture(event::submit),
+                validated_on_client,
+            ))
         }))
 }
 
