@@ -27,23 +27,31 @@ pub struct LoginCallParams {
     username: String,
     password: String,
 }
-#[cfg(feature = "ssr")]
+
+enum LoginCallParamsError {
+    InvalidUsername,
+    InvalidPassword,
+}
+
 impl LoginCallParams {
-    fn validated(&self) -> Option<LoginCallParams> {
-        let username_graphems_length = self.username.chars().count();
-        if <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
+    fn validated(&self) -> Result<LoginCallParams, LoginCallParamsError> {
+        // TODO: Review code duplication
+        let username = &self.username;
+        let username_graphems_length = username.chars().count();
+        if username.is_empty() || <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
             > USERNAME_MAX_LENGTH
         {
-            return None;
+            return Err(LoginCallParamsError::InvalidUsername);
         };
-        let password_graphems_length = self.password.chars().count();
-        if <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
+        let password = &self.password;
+        let password_graphems_length = password.chars().count();
+        if password.is_empty() || <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
             > PASSWORD_MAX_LENGTH
         {
-            return None;
+            return Err(LoginCallParamsError::InvalidPassword);
         };
 
-        Some(self.clone())
+        Ok(self.clone())
     }
 }
 
@@ -162,29 +170,48 @@ pub fn Login(
         }
         else {
             let data = data.unwrap().clone();
-            let username = data.username.clone();
-            let username_graphems_length = username.chars().count();
-            if username.is_empty() || <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
-                > USERNAME_MAX_LENGTH {
-                // TODO: Get a ref to the input element and set class `:invalid` to it
-                // TODO: Review code duplication
-                web_sys::console::log_1(&"Submit prevented".into());
-                ev.prevent_default();
-            }
-            let password = data.password.clone();
-            let password_graphems_length = password.chars().count();
-            if password.is_empty() || <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
-                > PASSWORD_MAX_LENGTH {
-                web_sys::console::log_1(&"Submit prevented".into());
-                ev.prevent_default();
-            }
             let form: web_sys::HtmlFormElement = ev.target().unwrap().unchecked_into();
-            if !form.check_validity() {
-                ev.prevent_default();
-                ev.stop_propagation()
+            match data.validated() {
+                Ok(_) => {}
+                Err(error) => {
+                    match error {
+                        LoginCallParamsError::InvalidUsername => {
+                            let input_div = form.children().get_with_index(0).unwrap();
+                            let input = input_div.children().get_with_index(1).unwrap();
+                            input.class_list().add_1("is-invalid").unwrap();
+                            ev.prevent_default();
+                        }
+                        LoginCallParamsError::InvalidPassword => {
+                            let input_div = form.children().get_with_index(1).unwrap();
+                            let input = input_div.children().get_with_index(1).unwrap();
+                            input.class_list().add_1("is-invalid").unwrap();
+                            ev.prevent_default();
+                        }
+                    }
+                }
             }
+            // let username = data.username.clone();
+            // let username_graphems_length = username.chars().count();
+            // if username.is_empty() || <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX)
+            //     > USERNAME_MAX_LENGTH {
+            //
+            //     web_sys::console::log_1(&"Submit prevented".into());
+            //     ev.prevent_default();
+            // }
+            // let password = data.password.clone();
+            // let password_graphems_length = password.chars().count();
+            // if password.is_empty() || <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX)
+            //     > PASSWORD_MAX_LENGTH {
+            //     web_sys::console::log_1(&"Submit prevented".into());
+            //     ev.prevent_default();
+            // }
 
-            form.class_list().add_1("was-validated").unwrap();
+            // if !form.check_validity() {
+            //     ev.prevent_default();
+            //     ev.stop_propagation()
+            // }
+            //
+            // form.class_list().add_1("was-validated").unwrap();
         }
     };
 
@@ -209,8 +236,6 @@ pub fn Login(
                                         .class("form-control")
                                         .id("ref1")
                                         .name("params[username]")
-                                        .required(true)
-                                        .maxlength(USERNAME_MAX_LENGTH as i64)
                                 },
                                 {
                                     div()
@@ -288,11 +313,11 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         Some(dummy_hash) => dummy_hash,
     };
     let params = match params.validated() {
-        None => {
+        Err(_) => {
             log!(Level::Warn, "Invalid login params");
             return return_early(ApiError::InvalidCredentials);
         }
-        Some(params) => params,
+        Ok(params) => params,
     };
     let account_row_result = query!(
         r#"
