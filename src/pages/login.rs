@@ -13,9 +13,7 @@ use leptos::tachys::html::event;
 use leptos::{component, server, IntoView};
 use leptos_router::hooks::{use_navigate, use_query_map};
 use leptos_router::NavigateOptions;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::sync::OnceLock;
 use wasm_bindgen::JsCast;
 use web_sys::SubmitEvent;
 
@@ -54,9 +52,6 @@ impl LoginCallParams {
     }
 }
 
-const URL_VALIDATION_REGEX: &str = r"^(/[^/].*)$";
-static URL_REGEX: OnceLock<Regex> = OnceLock::new();
-
 #[component]
 pub fn Login(
     set_user: WriteSignal<Option<User>>,
@@ -70,26 +65,19 @@ pub fn Login(
         .get("orig_url")
         .unwrap_or_else(|| "/".to_string());
     let navigate = use_navigate();
-    let url_validation_matcher =
-        URL_REGEX.get_or_init(|| Regex::new(URL_VALIDATION_REGEX).unwrap());
 
     Effect::new(move || {
         if let Some(Ok(response)) = login.value().get() {
             if response.error.is_none() {
                 set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
+                let navigate = navigate.clone();
 
-                let orig_url_clone = orig_url.clone();
-                let url_capture = match url_validation_matcher.captures(&orig_url_clone) {
-                    None => "/".to_string(),
-                    Some(capture) => capture.get(1).unwrap().as_str().to_string(),
-                };
-                let validated_orig_url = if url_capture.contains("//") {
+                // make sure param orig_url contains no '//' to prevent url injection
+                let validated_orig_url = if orig_url.contains("//") {
                     "/".to_string()
                 } else {
-                    url_capture
+                    orig_url.clone()
                 };
-
-                let navigate = navigate.clone();
 
                 spawn_local(async move {
                     if let Ok(res) = get_user().await {
