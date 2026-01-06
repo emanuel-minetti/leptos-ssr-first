@@ -13,6 +13,18 @@ use std::future::{ready, Ready};
 use std::rc::Rc;
 use chrono::Utc;
 
+/// This adds authorization to a leptos server fn.
+/// # Example
+/// In a leptos server fn:
+/// ```
+///#[server(client = crate::client::AddAuthHeaderClient)]
+/// pub async fn foo() -> Result<ApiResponse<User>, ServerFnError> {
+///     let req: actix_web::HttpRequest = extract().await?;
+///     // use fields as required
+///     let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
+///     let token = req.extensions_mut().get::<String>().unwrap().to_string();
+///     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
+/// ```
 pub struct Authorisation;
 
 impl<S, B> Transform<S, ServiceRequest> for Authorisation
@@ -57,18 +69,6 @@ where
         // grab url path from request to care for 'login'
         let is_login = req.path().starts_with("/api/login");
 
-        /// This adds authorization to a leptos server fn.
-        /// # Example
-        /// In a leptos server fn:
-        /// ```
-        ///#[server(client = crate::client::AddAuthHeaderClient)]
-        /// pub async fn foo() -> Result<ApiResponse<User>, ServerFnError> {
-        ///     let req: actix_web::HttpRequest = extract().await?;
-        ///     // use fields as required
-        ///     let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
-        ///     let token = req.extensions_mut().get::<String>().unwrap().to_string();
-        ///     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
-        /// ```
         async fn authorize(req: &ServiceRequest, db_pool: &Pool<Postgres>) -> Option<ApiError> {
             let jwt_keys = match req.app_data::<Data<JwtKeys>>() {
                 None => {

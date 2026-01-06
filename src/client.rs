@@ -6,6 +6,11 @@ use server_fn::request::browser::BrowserRequest;
 use server_fn::response::browser::BrowserResponse;
 use std::future::Future;
 
+pub struct AuthClient;
+
+/// A client wrapper that automatically attaches an `Authorization` header 
+/// to outgoing requests.
+/// See `server_utils/authorization.rs` for more details.`
 pub struct AddAuthHeaderClient;
 
 impl<E, IS, OS> Client<E, IS, OS> for AddAuthHeaderClient
