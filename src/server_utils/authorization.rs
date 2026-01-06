@@ -221,11 +221,11 @@ where
                     None => (),
                 }
             }
-            //call other middleware and handler and get the response
+            // call other middleware and handler and get the response
             let res = srv.call(req).await?;
             let _request = res.request().clone();
             if !is_login {
-                //log!(Level::Info, "Middleware called after server fn");
+                // add code here if it is to be called after the server fn
             }
             Ok(res.map_into_left_body())
         })
