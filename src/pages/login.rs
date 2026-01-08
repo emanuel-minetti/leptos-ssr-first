@@ -327,7 +327,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                         log!(Level::Info, "Logged in: {}", params.username);
                         Ok(ApiResponse {
                             error: None,
-                            expires_at: session_row_record.expires_at.as_utc().unix_timestamp(),
+                            expires_at: session_row_record.expires_at.and_utc().timestamp(),
                             token,
                             data: (),
                         })

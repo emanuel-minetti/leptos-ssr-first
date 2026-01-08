@@ -25,14 +25,15 @@ async fn main() -> std::io::Result<()> {
     //LSF CODE
     let configuration =
         configuration::get_configuration().expect("Couldn't read configuration file.");
+    let configuration_clone = configuration.clone();
     Logger::init(configuration.log).expect("Couldn't initialize logger");
-    let jwt_keys = api::jwt::get_jwt_keys(configuration.session_secret);
-    let dummy_hash = configuration.dummy_bcrypt_hash;
+    let jwt_keys = api::jwt::get_jwt_keys(configuration.authorization.session_secret);
+    let dummy_hash = configuration.authorization.dummy_bcrypt_hash;
     let db_url = configuration.database.connection_string();
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
         .expect("Couldn't connect to database.");
-    let _scheduler = match background_task::setup_scheduler(db_pool.clone()).await {
+    let _scheduler = match background_task::setup_scheduler(db_pool.clone(), configuration_clone).await {
         Ok(scheduler) => scheduler,
         Err(e) => panic!("Failed to setup scheduler: {}", e),
     };

@@ -56,7 +56,6 @@ ssr = [
   "sqlx/postgres",
   "sqlx/runtime-tokio",
   "sqlx/uuid",
-  "sqlx/time",
   "sqlx/chrono",
   "getrandom/wasm_js",
   "log",

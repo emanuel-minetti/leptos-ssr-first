@@ -164,7 +164,7 @@ where
                 },
             };
             // check whether expired
-            if session_row.expires_at.as_utc().unix_timestamp() < Utc::now().timestamp() {
+            if session_row.expires_at.and_utc().timestamp() < Utc::now().timestamp() {
                 return Some(ApiError::Expired);
             }
             // now we know the session is authenticated and not expired, so update session
@@ -190,7 +190,7 @@ where
             req.extensions_mut().insert(token.to_string());
             req.extensions_mut().insert(account_id);
             req.extensions_mut()
-                .insert(updated_session_row.expires_at.as_utc().unix_timestamp());
+                .insert(updated_session_row.expires_at.and_utc().timestamp());
 
             None
         }

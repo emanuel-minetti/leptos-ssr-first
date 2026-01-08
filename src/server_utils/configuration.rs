@@ -2,15 +2,14 @@ use std::str::FromStr;
 use serde::{Deserialize, Deserializer};
 use serde::de::Error;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct Settings {
     pub database: DatabaseSettings,
     pub log: LogSettings,
-    pub session_secret: Vec<u8>,
-    pub dummy_bcrypt_hash: String,
+    pub authorization: AuthorizationSettings,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: String,
@@ -28,7 +27,7 @@ impl DatabaseSettings {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct LogSettings {
     #[serde(deserialize_with = "string_to_level_filter")]
     pub max_level: log::Level,
@@ -46,6 +45,13 @@ where
         Ok(l) => Ok(l),
         Err(e) => Err(Error::custom(e.to_string())),
     }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct AuthorizationSettings {
+    pub session_secret: Vec<u8>,
+    pub dummy_bcrypt_hash: String,
+    pub session_expiry_mins: u8,
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
