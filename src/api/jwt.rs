@@ -25,10 +25,7 @@ impl JwtClaim {
 
 impl JwtClaim {
     pub fn try_into_uuid(self) -> Result<Uuid, Error> {
-        match Uuid::from_str(&self.session_id) {
-            Ok(uuid) => Ok(uuid),
-            Err(err) => Err(err),
-        }
+        Uuid::from_str(&self.session_id)
     }
 }
 
