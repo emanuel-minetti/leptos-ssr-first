@@ -32,14 +32,14 @@ async fn session_cleanup_task(expiry_mins: u8, db_pool: Pool<Postgres>) {
 }
 
 pub async fn setup_scheduler(db_pool: Pool<Postgres>, config: Settings) -> Result<JobScheduler, JobSchedulerError> {
-    let scheduler = JobScheduler::new().await?;
+    let expiry_mins = config.authorization.session_expiry_mins;
+    let cron_string = format!("0 0/{} * * * *", expiry_mins);
     let db_pool = db_pool.clone();
+    let scheduler = JobScheduler::new().await?;
     scheduler.start().await?;
-    // TODO: adjust to expiry_mins
-    let session_cleanup_job = Job::new_async("0 1/5 * * * *", move |_uuid, _l| {
-        let db_pool = db_pool.clone();
-        let expiry_mins = config.authorization.session_expiry_mins;
 
+    let session_cleanup_job = Job::new_async(cron_string, move |_uuid, _l| {
+        let db_pool = db_pool.clone();
         Box::pin(async move {
             session_cleanup_task(expiry_mins, db_pool).await;
         })

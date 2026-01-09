@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use log::log;
 use serde::{Deserialize, Deserializer};
 use serde::de::Error;
 
@@ -51,7 +52,21 @@ where
 pub struct AuthorizationSettings {
     pub session_secret: Vec<u8>,
     pub dummy_bcrypt_hash: String,
+    /// must be a divider of 60
+    #[serde(deserialize_with = "u8_to_expiry_filter")]
     pub session_expiry_mins: u8,
+}
+
+fn u8_to_expiry_filter<'de, D>(deserializer: D) -> Result<u8, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = u8::deserialize(deserializer)?;
+    if value == 0 || 60 % value != 0 {
+        log!(log::Level::Error, "session expiry time must be a divider of 60");
+        return Err(Error::custom("session expiry time must be a divider of 60"));
+    }
+    Ok(value)
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {

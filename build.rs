@@ -14,7 +14,7 @@ fn main() {
 
     let translations_infos = TranslationsInfos::parse(Default::default()).unwrap();
 
-    // emit "cargo:rerun-if-changed" for every translations files
+    // emit "cargo:rerun-if-changed" for every translation file
     translations_infos.rerun_if_locales_changed();
 
     // codegen
