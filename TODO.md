@@ -1,0 +1,3 @@
+- Get client configuration from the server
+- Get MOTD from the server
+- Add e2e tests
