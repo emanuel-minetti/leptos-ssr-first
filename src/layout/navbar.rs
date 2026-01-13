@@ -28,19 +28,18 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                 },
                 { NavBarLoginInfo() },
                 {
-                    //TODO remove focus if changed
                     form().class("d-inline-flex p-2").child(
                         select()
                             .class("form-select")
                             // needed for the select element to be reactive
                             .prop("value", move || lang.get())
                             .on(ev::change, move |ev: Event| {
-                                let option_value = ev
+                                let target = ev
                                     .target()
                                     .unwrap()
                                     .value_of()
-                                    .unchecked_into::<HtmlSelectElement>()
-                                    .value();
+                                    .unchecked_into::<HtmlSelectElement>();
+                                let option_value = target.value();
                                 let option_value = if option_value.to_string() == "en" {
                                     "en"
                                 } else {
@@ -58,6 +57,7 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                                             .expect("Got server error setting lang");
                                     });
                                 }
+                                target.blur().expect("Couldn't blur select element");
                             })
                             .aria_label("Language")
                             .child((
