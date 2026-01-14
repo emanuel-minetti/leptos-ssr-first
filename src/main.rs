@@ -1,8 +1,10 @@
 #[cfg(feature = "ssr")]
 use actix_web::web::Data;
+use leptos_ssr_first::api;
+use leptos_ssr_first::server_utils::background_task;
 
 #[cfg(feature = "ssr")]
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     use actix_files::Files;
     use actix_web::*;
@@ -10,8 +12,10 @@ async fn main() -> std::io::Result<()> {
     use leptos::prelude::*;
     use leptos_actix::handle_server_fns_with_context;
     use leptos_actix::{generate_route_list, LeptosRoutes};
-    use leptos_meta::MetaTags;
     use leptos_ssr_first::app::*;
+    use leptos_ssr_first::server_utils::authorization::Authorisation;
+    use leptos_ssr_first::server_utils::configuration;
+    use leptos_ssr_first::server_utils::logging::Logger;
     use sqlx::{Pool, Postgres};
 
     //LEPTOS CODE
@@ -19,10 +23,21 @@ async fn main() -> std::io::Result<()> {
     let addr = conf.leptos_options.site_addr;
 
     //LSF CODE
-    let db_url = "postgres://lsf:lsf@localhost:5432/lsf";
-    let db_pool = Pool::<Postgres>::connect(db_url)
+    let configuration =
+        configuration::get_configuration().expect("Couldn't read configuration file.");
+    let configuration_clone = configuration.clone();
+    Logger::init(configuration.log).expect("Couldn't initialize logger");
+    let jwt_keys = api::jwt::get_jwt_keys(configuration.authorization.session_secret);
+    let dummy_hash = configuration.authorization.dummy_bcrypt_hash;
+    let db_url = configuration.database.connection_string();
+    let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
         .expect("Couldn't connect to database.");
+    let _scheduler =
+        match background_task::setup_scheduler(db_pool.clone(), configuration_clone).await {
+            Ok(scheduler) => scheduler,
+            Err(e) => panic!("Failed to setup scheduler: {}", e),
+        };
     //LSF CODE END
 
     HttpServer::new(move || {
@@ -30,17 +45,30 @@ async fn main() -> std::io::Result<()> {
         let routes = generate_route_list(App);
         let leptos_options = &conf.leptos_options;
         let site_root = leptos_options.site_root.clone().to_string();
+        //LSF CODE
         let db_pool_clone = db_pool.clone();
-        let db_pool_clone2 = db_pool.clone();
+        let jwt_keys_clone = jwt_keys.clone();
+        let dummy_hash_clone = dummy_hash.clone();
+        //LSF CODE END
 
         println!("listening on http://{}", &addr);
 
         App::new()
             //LSF CODE
-            .app_data(Data::new(db_pool_clone.clone()))
-            .route(
-                "/api/{tail:.*}",
-                handle_server_fns_with_context(move || provide_context(db_pool_clone.clone())),
+            .service(
+                web::scope("/api")
+                    .app_data(Data::new(db_pool_clone.clone()))
+                    .app_data(Data::new(jwt_keys_clone.clone()))
+                    .app_data(Data::new(dummy_hash_clone.clone()))
+                    .wrap(Authorisation)
+                    .route(
+                        "/{func_name:.*}",
+                        handle_server_fns_with_context(move || {
+                            provide_context(Data::new(db_pool_clone.clone()));
+                            provide_context(Data::new(jwt_keys_clone.clone()));
+                            provide_context(Data::new(dummy_hash_clone.clone()));
+                        }),
+                    ),
             )
             //LSF CODE END
             // serve JS/WASM/CSS from `pkg`
@@ -49,28 +77,9 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/assets", &site_root))
             // serve the favicon from /favicon.ico
             .service(favicon)
-            .leptos_routes_with_context(routes, move || provide_context(db_pool_clone2.clone()), {
+            .leptos_routes(routes, {
                 let leptos_options = leptos_options.clone();
-                move || {
-                    view! {
-                        <!DOCTYPE html>
-                        <html lang="en">
-                            <head>
-                                <meta charset="utf-8" />
-                                <meta
-                                    name="viewport"
-                                    content="width=device-width, initial-scale=1"
-                                />
-                                <AutoReload options=leptos_options.clone() />
-                                <HydrationScripts options=leptos_options.clone() />
-                                <MetaTags />
-                            </head>
-                            <body>
-                                <App />
-                            </body>
-                        </html>
-                    }
-                }
+                move || shell(leptos_options.clone())
             })
             .app_data(Data::new(leptos_options.to_owned()))
         //.wrap(middleware::Compress::default())

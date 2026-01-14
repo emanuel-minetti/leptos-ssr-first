@@ -1,0 +1,87 @@
+use log::log;
+use serde::de::Error;
+use serde::{Deserialize, Deserializer};
+use std::str::FromStr;
+
+#[derive(Deserialize, Clone)]
+pub struct Settings {
+    pub database: DatabaseSettings,
+    pub log: LogSettings,
+    pub authorization: AuthorizationSettings,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct DatabaseSettings {
+    pub username: String,
+    pub password: String,
+    pub host: String,
+    pub port: u16,
+    pub database_name: String,
+}
+
+impl DatabaseSettings {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database_name
+        )
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct LogSettings {
+    #[serde(deserialize_with = "string_to_level_filter")]
+    pub max_level: log::Level,
+    #[serde(rename = "path")]
+    pub path_string: String,
+    pub days_to_keep: u64,
+}
+
+fn string_to_level_filter<'de, D>(deserializer: D) -> Result<log::Level, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let string: String = Deserialize::deserialize(deserializer)?;
+    match log::Level::from_str(string.as_str()) {
+        Ok(l) => Ok(l),
+        Err(e) => Err(Error::custom(e.to_string())),
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct AuthorizationSettings {
+    pub session_secret: Vec<u8>,
+    pub dummy_bcrypt_hash: String,
+    #[serde(deserialize_with = "u8_to_expiry_filter")]
+    pub session_expiry_mins: u8,
+}
+
+/// Make sure that the session expiry time is a divider of 60.
+fn u8_to_expiry_filter<'de, D>(deserializer: D) -> Result<u8, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = u8::deserialize(deserializer)?;
+    if value == 0 || 60 % value != 0 {
+        log!(
+            log::Level::Error,
+            "session expiry time must be a divider of 60"
+        );
+        return Err(Error::custom("session expiry time must be a divider of 60"));
+    }
+    Ok(value)
+}
+
+pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+    println!(
+        "{:?}",
+        std::env::current_dir().expect("Couldn't get present working directory.")
+    );
+    let settings = config::Config::builder()
+        .add_source(config::File::new(
+            "config/configuration.json",
+            config::FileFormat::Json,
+        ))
+        .build()?;
+    settings.try_deserialize::<Settings>()
+}

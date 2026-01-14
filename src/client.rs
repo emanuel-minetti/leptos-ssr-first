@@ -1,0 +1,63 @@
+use futures_util::{Sink, Stream};
+use server_fn::client::browser::BrowserClient;
+use server_fn::client::Client;
+use server_fn::error::FromServerFnError;
+use server_fn::request::browser::BrowserRequest;
+use server_fn::response::browser::BrowserResponse;
+use std::future::Future;
+
+pub struct AuthClient;
+
+/// A client wrapper that automatically attaches an `Authorization` header 
+/// to outgoing requests.
+/// # Example
+/// In a leptos server fn:
+/// ```
+///#[server(client = crate::client::AddAuthHeaderClient)]
+/// pub async fn foo() -> Result<ApiResponse<User>, ServerFnError> {
+///     let req: actix_web::HttpRequest = extract().await?;
+///     // use fields as required
+///     let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
+///     let token = req.extensions_mut().get::<String>().unwrap().to_string();
+///     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
+/// ```
+pub struct AddAuthHeaderClient;
+
+impl<E, IS, OS> Client<E, IS, OS> for AddAuthHeaderClient
+where
+    E: FromServerFnError,
+    IS: FromServerFnError,
+    OS: FromServerFnError,
+{
+    type Request = BrowserRequest;
+    type Response = BrowserResponse;
+
+    fn send(req: Self::Request) -> impl Future<Output = Result<Self::Response, E>> + Send {
+        //here all the work gets done
+        let (token, _) = crate::utils::get_login_data_from_session_storage();
+        let headers = req.headers();
+        headers.append(
+            "Authorization",
+            format!("Bearer {}", token.as_str()).as_str(),
+        );
+        <BrowserClient as Client<E, IS, OS>>::send(req)
+    }
+
+    fn open_websocket(
+        path: &str,
+    ) -> impl Future<
+        Output = Result<
+            (
+                impl Stream<Item = Result<server_fn::Bytes, server_fn::Bytes>> + Send + 'static,
+                impl Sink<server_fn::Bytes> + Send + 'static,
+            ),
+            E,
+        >,
+    > + Send {
+        <BrowserClient as Client<E, IS, OS>>::open_websocket(path)
+    }
+
+    fn spawn(future: impl Future<Output = ()> + Send + 'static) {
+        <BrowserClient as Client<E, IS, OS>>::spawn(future)
+    }
+}

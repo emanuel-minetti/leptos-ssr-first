@@ -13,5 +13,7 @@
   "loading": "Waiting for server response...",
   "invalidCredentials": "Invalid username or password",
   "serverError": "Server Error: {{ error }}",
-  "redirecting": "Redirecting ..."
+  "redirecting": "Redirecting ...",
+  "usernameRequired": "Username is required",
+  "passwordRequired": "Password is required"
 }
