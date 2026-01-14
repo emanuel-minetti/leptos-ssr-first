@@ -33,10 +33,11 @@ async fn main() -> std::io::Result<()> {
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
         .expect("Couldn't connect to database.");
-    let _scheduler = match background_task::setup_scheduler(db_pool.clone(), configuration_clone).await {
-        Ok(scheduler) => scheduler,
-        Err(e) => panic!("Failed to setup scheduler: {}", e),
-    };
+    let _scheduler =
+        match background_task::setup_scheduler(db_pool.clone(), configuration_clone).await {
+            Ok(scheduler) => scheduler,
+            Err(e) => panic!("Failed to setup scheduler: {}", e),
+        };
     //LSF CODE END
 
     HttpServer::new(move || {

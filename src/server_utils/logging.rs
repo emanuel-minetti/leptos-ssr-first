@@ -1,11 +1,11 @@
+use crate::server_utils::configuration::LogSettings;
+use chrono::prelude::*;
+use chrono::Days;
+use log::{Level, LevelFilter, SetLoggerError};
 use std::fs::{read_dir, remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::SystemTime;
-use chrono::Days;
-use log::{Level, LevelFilter, SetLoggerError};
-use chrono::prelude::*;
-use crate::server_utils::configuration::LogSettings;
 
 pub struct Logger {
     level: Level,
@@ -28,7 +28,7 @@ impl log::Log for Logger {
         }
     }
 
-    fn flush(&self) { }
+    fn flush(&self) {}
 }
 
 impl Logger {
@@ -58,11 +58,11 @@ impl Logger {
                     .unwrap()
                     .as_secs()
                     <= today
-                    .checked_sub_days(Days::new(settings.days_to_keep))
-                    .unwrap()
-                    .timestamp()
-                    .try_into()
-                    .unwrap()
+                        .checked_sub_days(Days::new(settings.days_to_keep))
+                        .unwrap()
+                        .timestamp()
+                        .try_into()
+                        .unwrap()
             })
             .for_each(move |file| remove_file::<PathBuf>(file.unwrap().path()).unwrap());
 

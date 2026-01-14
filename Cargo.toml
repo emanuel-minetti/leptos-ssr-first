@@ -27,7 +27,6 @@ log = {version = "0.4.29",optional = true }
 config = { version = "0.15.17",optional = true }
 chrono = "0.4.42"
 jsonwebtoken = {version = "10.2.0", default-features = false, features = ["rust_crypto"], optional = true}
-regex = "1.12.2"
 tokio-cron-scheduler = {version = "0.15.1", optional = true}
 tokio = { version = "1.48.0", optional = true, features = ["rt", "rt-multi-thread", "macros"] }
 
@@ -45,9 +44,9 @@ hydrate = [
   "leptos_i18n_build/hydrate",
 ]
 ssr = [
-  "dep:actix-files",
+  "actix-files",
   "actix-web",
-  "dep:leptos_actix",
+  "leptos_actix",
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",

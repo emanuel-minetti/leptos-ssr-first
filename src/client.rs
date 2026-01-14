@@ -10,7 +10,17 @@ pub struct AuthClient;
 
 /// A client wrapper that automatically attaches an `Authorization` header 
 /// to outgoing requests.
-/// See `server_utils/authorization.rs` for more details.`
+/// # Example
+/// In a leptos server fn:
+/// ```
+///#[server(client = crate::client::AddAuthHeaderClient)]
+/// pub async fn foo() -> Result<ApiResponse<User>, ServerFnError> {
+///     let req: actix_web::HttpRequest = extract().await?;
+///     // use fields as required
+///     let account_id = req.extensions_mut().get::<Uuid>().unwrap().clone();
+///     let token = req.extensions_mut().get::<String>().unwrap().to_string();
+///     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
+/// ```
 pub struct AddAuthHeaderClient;
 
 impl<E, IS, OS> Client<E, IS, OS> for AddAuthHeaderClient
@@ -23,6 +33,7 @@ where
     type Response = BrowserResponse;
 
     fn send(req: Self::Request) -> impl Future<Output = Result<Self::Response, E>> + Send {
+        //here all the work gets done
         let (token, _) = crate::utils::get_login_data_from_session_storage();
         let headers = req.headers();
         headers.append(

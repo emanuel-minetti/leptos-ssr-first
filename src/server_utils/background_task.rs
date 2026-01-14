@@ -1,22 +1,23 @@
+use crate::server_utils::configuration::Settings;
 use chrono::{NaiveDateTime, TimeDelta};
 use log::{log, Level};
 use sqlx::{query, Pool, Postgres};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
-use crate::server_utils::configuration::Settings;
 
-/// To be used as a background task
+/// The background task handling session cleanup in the database.
 async fn session_cleanup_task(expiry_mins: u8, db_pool: Pool<Postgres>) {
     let now = chrono::Utc::now();
     // delete sessions with twice the expiry time ago
     let ready_to_delete = now - TimeDelta::minutes((expiry_mins * 2) as i64);
-    let ready_to_delete: NaiveDateTime = NaiveDateTime::new(ready_to_delete.date_naive(), ready_to_delete.time());
+    let ready_to_delete: NaiveDateTime =
+        NaiveDateTime::new(ready_to_delete.date_naive(), ready_to_delete.time());
 
     let query_result = query!(
         r#"
                     DELETE FROM session
                     WHERE expires_at < $1 ;
-                    "#
-        , ready_to_delete
+                    "#,
+        ready_to_delete
     )
     .execute(&db_pool)
     .await;
@@ -31,7 +32,11 @@ async fn session_cleanup_task(expiry_mins: u8, db_pool: Pool<Postgres>) {
     }
 }
 
-pub async fn setup_scheduler(db_pool: Pool<Postgres>, config: Settings) -> Result<JobScheduler, JobSchedulerError> {
+/// Sets up the scheduler for background tasks.
+pub async fn setup_scheduler(
+    db_pool: Pool<Postgres>,
+    config: Settings,
+) -> Result<JobScheduler, JobSchedulerError> {
     let expiry_mins = config.authorization.session_expiry_mins;
     let cron_string = format!("0 0/{} * * * *", expiry_mins);
     let db_pool = db_pool.clone();
