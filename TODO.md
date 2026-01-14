@@ -1,5 +1,5 @@
+- Review logging.
 - Get client configuration from the server
 - Get MOTD from the server
-- Add a background task to remove outdated logs. (See `logging.rs`)
 - Retrieve session on reload from session storage if applicable
 - Add e2e tests
