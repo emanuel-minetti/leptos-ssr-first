@@ -13,7 +13,8 @@ const LOG_FILE_REGEX: &str = r"^log-(\d{4})-(\d{2})-(\d{2})\.txt$";
 
 pub struct Logger {
     level: Level,
-    file: File,
+    path: String,
+    file:  File,
 }
 
 impl log::Log for Logger {
@@ -25,8 +26,8 @@ impl log::Log for Logger {
         if self.enabled(record.metadata()) {
             let file = &mut self.file.try_clone().unwrap();
             let now = Utc::now().format(LOG_ENTRY_DATE_FORMAT);
-            println!("{} [{}]: {}", now, record.level(), record.args());
-            writeln!(file, "{} [{}]: {}", now, record.level(), record.args())
+            println!("{} [{}]: ({}) {}", now, record.level(), record.target(), record.args());
+            writeln!(file, "{} [{}]: ({}) {}", now, record.level(), record.target() ,record.args())
                 .expect("Could not write to log file");
             file.flush().unwrap();
         }
@@ -36,24 +37,19 @@ impl log::Log for Logger {
 }
 
 impl Logger {
-    pub async fn new(settings: LogSettings) -> Box<Self> {
-        // TODO add background task for creating new log files
-        let today = Utc::now();
-        let today_string = today.format(LOG_FILE_NAME_DATE_FORMAT);
-        // TODO consider using `const-format` crate for using a CONST here
-        let file_name = format!("log-{}.txt", today_string);
-        let file_path = settings.path_string.clone() + file_name.as_str();
-        let file = File::options()
-            .append(true)
-            .create(true)
-            .open(file_path)
-            .expect("Unable to open log file");
+    async fn new(settings: LogSettings) -> Box<Self> {
+        let file = Self::open_file(settings.path_string.clone());
         Self::delete_outdated_log_files(&settings, true).await;
 
         Box::new(Logger {
             level: settings.max_level,
+            path: settings.path_string,
             file,
         })
+    }
+
+    pub async fn set_new_logfile(&mut self) {
+        self.file = Self::open_file(self.path.clone());
     }
 
     pub async fn delete_outdated_log_files(settings: &LogSettings, running_on_startup: bool) {
@@ -221,5 +217,23 @@ impl Logger {
     pub async fn init(config: LogSettings) -> Result<(), SetLoggerError> {
         let max_level: LevelFilter = config.max_level.to_level_filter();
         log::set_boxed_logger(Self::new(config).await).map(|()| log::set_max_level(max_level))
+    }
+
+    fn open_file(path: String) -> File {
+        let file_path = Self::new_filename(path);
+        let file = File::options()
+            .append(true)
+            .create(true)
+            .open(file_path)
+            .expect("Unable to open log file");
+        file
+    }
+
+    fn new_filename(path: String) -> String {
+        let today = Utc::now();
+        let today_string = today.format(LOG_FILE_NAME_DATE_FORMAT);
+        // TODO consider using `const-format` crate for using a CONST here
+        let file_name = format!("log-{}.txt", today_string);
+        path.clone() + file_name.as_str()
     }
 }

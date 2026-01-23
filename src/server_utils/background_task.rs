@@ -1,6 +1,7 @@
 use crate::server_utils::configuration::Settings;
 use crate::server_utils::logging::Logger;
 use chrono::{NaiveDateTime, TimeDelta};
+use leptos::prelude::StorageAccess;
 use log::{log, Level};
 use sqlx::{query, Pool, Postgres};
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
@@ -61,6 +62,8 @@ pub async fn setup_scheduler(
         })
     })?;
     scheduler.add(logfile_cleanup_job).await?;
+
+    //Logger::set_new_logfile(*log::logger()).await;
 
     Ok(scheduler)
 }
