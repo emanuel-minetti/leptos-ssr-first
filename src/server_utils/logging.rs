@@ -37,6 +37,7 @@ impl log::Log for Logger {
 
 impl Logger {
     pub async fn new(settings: LogSettings) -> Box<Self> {
+        // TODO add background task for creating new log files
         let today = Utc::now();
         let today_string = today.format(LOG_FILE_NAME_DATE_FORMAT);
         // TODO consider using `const-format` crate for using a CONST here
