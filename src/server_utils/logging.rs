@@ -1,10 +1,10 @@
 use crate::server_utils::configuration::LogSettings;
 use chrono::prelude::*;
-use chrono::LocalResult;
+use chrono::{Days, LocalResult};
 use log::{log, Level, LevelFilter, SetLoggerError};
 use regex::Regex;
 use std::collections::HashMap;
-use std::fs::{read_dir, DirEntry, File};
+use std::fs::{read_dir, remove_file, DirEntry, File};
 use std::io::Write;
 
 const LOG_ENTRY_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
@@ -36,7 +36,7 @@ impl log::Log for Logger {
 }
 
 impl Logger {
-    pub fn new(settings: LogSettings) -> Box<Self> {
+    pub async fn new(settings: LogSettings) -> Box<Self> {
         let today = Utc::now();
         let today_string = today.format(LOG_FILE_NAME_DATE_FORMAT);
         // TODO consider using `const-format` crate for using a CONST here
@@ -47,7 +47,7 @@ impl Logger {
             .create(true)
             .open(file_path)
             .expect("Unable to open log file");
-        Self::delete_outdated_log_files(&settings, true);
+        Self::delete_outdated_log_files(&settings, true).await;
 
         Box::new(Logger {
             level: settings.max_level,
@@ -55,8 +55,7 @@ impl Logger {
         })
     }
 
-    pub fn delete_outdated_log_files(settings: &LogSettings, running_on_startup: bool) {
-        let _today = Utc::now();
+    pub async fn delete_outdated_log_files(settings: &LogSettings, running_on_startup: bool) {
         let log_file_reg_ex = Regex::new(LOG_FILE_REGEX).unwrap();
         let log_file_dir = match read_dir(settings.path_string.clone()) {
             Ok(files) => files,
@@ -176,35 +175,50 @@ impl Logger {
                 }
             }
         }
-        // TODO collect log files to remove
+        // collect log files to remove
+        for (file_name, date_option) in &files_in_dir_map.clone() {
+            if date_option.is_some() {
+                let today = Utc::now();
+                let file_date = date_option.unwrap();
+                if file_date.checked_add_days(Days::new(settings.days_to_keep)) > today.into() {
+                    files_in_dir_map.insert(file_name.to_string(), None);
+                }
+            }
+        }
 
-        println!("Found files: {:?}", files_in_dir_map);
-
-        // let _filtered_log_files = read_dir(settings.path_string.clone())
-        //     .unwrap()
-        //     .filter(move |entry| {
-        //         entry
-        //             .as_ref()
-        //             .unwrap()
-        //             .metadata()
-        //             .unwrap()
-        //             .created()
-        //             .unwrap()
-        //             .duration_since(SystemTime::UNIX_EPOCH)
-        //             .unwrap()
-        //             .as_secs()
-        //             <= today
-        //             .checked_sub_days(Days::new(settings.days_to_keep))
-        //             .unwrap()
-        //             .timestamp()
-        //             .try_into()
-        //             .unwrap()
-        //     })
-        //     .for_each(move |file| remove_file::<PathBuf>(file.unwrap().path()).unwrap());
+        // remove outdated log files
+        for (file_name, date_option) in &files_in_dir_map.clone() {
+            if date_option.is_some() {
+                let full_file_path = settings.path_string.clone() + file_name.as_str();
+                match remove_file(full_file_path) {
+                    Ok(_) => {
+                        if !running_on_startup {
+                            log!(Level::Info, "Deleted outdated log file {}", file_name);
+                        } else {
+                            println!("Info: Deleted outdated log file {}", file_name);
+                        }
+                    }
+                    Err(_) => {
+                        if !running_on_startup {
+                            log!(
+                                Level::Error,
+                                "Couldn't remove outdated log file {}",
+                                file_name
+                            );
+                        } else {
+                            println!("Error: Cannot remove outdated log file {}", file_name);
+                        }
+                    }
+                };
+            }
+        }
+        if !running_on_startup {
+            log!(Level::Debug, "cleaned up logfiles");
+        }
     }
 
-    pub fn init(config: LogSettings) -> Result<(), SetLoggerError> {
+    pub async fn init(config: LogSettings) -> Result<(), SetLoggerError> {
         let max_level: LevelFilter = config.max_level.to_level_filter();
-        log::set_boxed_logger(Self::new(config)).map(|()| log::set_max_level(max_level))
+        log::set_boxed_logger(Self::new(config).await).map(|()| log::set_max_level(max_level))
     }
 }

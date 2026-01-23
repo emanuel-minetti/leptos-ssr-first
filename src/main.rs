@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
     let configuration =
         configuration::get_configuration().expect("Couldn't read configuration file.");
     let configuration_clone = configuration.clone();
-    Logger::init(configuration.log).expect("Couldn't initialize logger");
+    Logger::init(configuration.log).await.expect("Couldn't initialize logger");
     let jwt_keys = api::jwt::get_jwt_keys(configuration.authorization.session_secret);
     let dummy_hash = configuration.authorization.dummy_bcrypt_hash;
     let db_url = configuration.database.connection_string();

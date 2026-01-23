@@ -1,4 +1,5 @@
 use crate::server_utils::configuration::Settings;
+use crate::server_utils::logging::Logger;
 use chrono::{NaiveDateTime, TimeDelta};
 use log::{log, Level};
 use sqlx::{query, Pool, Postgres};
@@ -38,18 +39,28 @@ pub async fn setup_scheduler(
     config: Settings,
 ) -> Result<JobScheduler, JobSchedulerError> {
     let expiry_mins = config.authorization.session_expiry_mins;
-    let cron_string = format!("0 0/{} * * * *", expiry_mins);
+    let session_cleanup_cron_string = format!("0 0/{} * * * *", expiry_mins);
     let db_pool = db_pool.clone();
     let scheduler = JobScheduler::new().await?;
     scheduler.start().await?;
 
-    let session_cleanup_job = Job::new_async(cron_string, move |_uuid, _l| {
+    let session_cleanup_job = Job::new_async(session_cleanup_cron_string, move |_uuid, _l| {
         let db_pool = db_pool.clone();
         Box::pin(async move {
             session_cleanup_task(expiry_mins, db_pool).await;
         })
     })?;
     scheduler.add(session_cleanup_job).await?;
+
+    let logfile_cleanup_cron_string = "0 5 0 * * * *";
+    let log_settings = config.log.clone();
+    let logfile_cleanup_job = Job::new_async(logfile_cleanup_cron_string, move |_uuid, _l| {
+        let log_settings = log_settings.clone();
+        Box::pin(async move {
+            Logger::delete_outdated_log_files(&log_settings, false).await;
+        })
+    })?;
+    scheduler.add(logfile_cleanup_job).await?;
 
     Ok(scheduler)
 }
