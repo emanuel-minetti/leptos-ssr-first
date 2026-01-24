@@ -12,7 +12,6 @@ async fn session_cleanup_task(expiry_mins: u8, db_pool: Pool<Postgres>) {
     let ready_to_delete = now - TimeDelta::minutes((expiry_mins * 2) as i64);
     let ready_to_delete: NaiveDateTime =
         NaiveDateTime::new(ready_to_delete.date_naive(), ready_to_delete.time());
-
     let query_result = query!(
         r#"
                     DELETE FROM session
