@@ -6,6 +6,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::fs::{read_dir, remove_file, DirEntry, File};
 use std::io::Write;
+use std::sync::{Mutex, OnceLock};
 
 const LOG_ENTRY_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 const LOG_FILE_NAME_DATE_FORMAT: &str = "%Y-%m-%d";
@@ -14,8 +15,10 @@ const LOG_FILE_REGEX: &str = r"^log-(\d{4})-(\d{2})-(\d{2})\.txt$";
 pub struct Logger {
     level: Level,
     path: String,
-    file:  File,
+    file: Mutex<File>,
 }
+
+static LOGGER: OnceLock<Logger> = OnceLock::new();
 
 impl log::Log for Logger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
@@ -24,11 +27,24 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let file = &mut self.file.try_clone().unwrap();
+            let file = &mut self.file.try_lock().unwrap();
             let now = Utc::now().format(LOG_ENTRY_DATE_FORMAT);
-            println!("{} [{}]: ({}) {}", now, record.level(), record.target(), record.args());
-            writeln!(file, "{} [{}]: ({}) {}", now, record.level(), record.target() ,record.args())
-                .expect("Could not write to log file");
+            println!(
+                "{} [{}]: ({}) {}",
+                now,
+                record.level(),
+                record.target(),
+                record.args()
+            );
+            writeln!(
+                file,
+                "{} [{}]: ({}) {}",
+                now,
+                record.level(),
+                record.target(),
+                record.args()
+            )
+            .expect("Could not write to log file");
             file.flush().unwrap();
         }
     }
@@ -37,19 +53,10 @@ impl log::Log for Logger {
 }
 
 impl Logger {
-    async fn new(settings: LogSettings) -> Box<Self> {
-        let file = Self::open_file(settings.path_string.clone());
-        Self::delete_outdated_log_files(&settings, true).await;
-
-        Box::new(Logger {
-            level: settings.max_level,
-            path: settings.path_string,
-            file,
-        })
-    }
-
-    pub async fn set_new_logfile(&mut self) {
-        self.file = Self::open_file(self.path.clone());
+    pub async fn set_new_logfile() {
+        let this = LOGGER.get().unwrap();
+        let mut file = this.file.lock().unwrap();
+        *file = Self::open_file(this.path.clone());
     }
 
     pub async fn delete_outdated_log_files(settings: &LogSettings, running_on_startup: bool) {
@@ -216,7 +223,18 @@ impl Logger {
 
     pub async fn init(config: LogSettings) -> Result<(), SetLoggerError> {
         let max_level: LevelFilter = config.max_level.to_level_filter();
-        log::set_boxed_logger(Self::new(config).await).map(|()| log::set_max_level(max_level))
+        log::set_logger(Self::new(config).await).map(|()| log::set_max_level(max_level))
+    }
+
+    async fn new(settings: LogSettings) -> &'static Self {
+        let file = Self::open_file(settings.path_string.clone());
+        Self::delete_outdated_log_files(&settings, true).await;
+
+        LOGGER.get_or_init(|| Logger {
+            level: settings.max_level,
+            path: settings.path_string,
+            file: Mutex::new(file),
+        })
     }
 
     fn open_file(path: String) -> File {
