@@ -20,7 +20,7 @@ Bootstrap is used for styling.
 - Install `cargo-leptos` via cargo (wait a bit)
 - Install `sqlx-cli` and `cargo-make` via cargo
 - Install `postgresql` and `postgresql-client` via apt
-- Create user and database in Postgresql. (Make sure the app can connect to it.) 
+- Create a user and database in Postgresql. (Make sure the app can connect to it.) 
 - Run `sqlx database setup`.
 - Copy `config/configuration.json.dist` to `config/configuration.json` and adjust accordingly.
 - Run `cargo leptos serve` and enjoy.
