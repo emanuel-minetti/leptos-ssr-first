@@ -43,6 +43,7 @@ pub async fn setup_scheduler(
     let scheduler = JobScheduler::new().await?;
     scheduler.start().await?;
 
+    // session cleanup
     let session_cleanup_job = Job::new_async(session_cleanup_cron_string, move |_uuid, _l| {
         let db_pool = db_pool.clone();
         Box::pin(async move {
@@ -51,6 +52,7 @@ pub async fn setup_scheduler(
     })?;
     scheduler.add(session_cleanup_job).await?;
 
+    // logfile cleanup
     let logfile_cleanup_cron_string = "0 5 0 * * * *";
     let log_settings = config.log.clone();
     let logfile_cleanup_job = Job::new_async(logfile_cleanup_cron_string, move |_uuid, _l| {
@@ -61,7 +63,14 @@ pub async fn setup_scheduler(
     })?;
     scheduler.add(logfile_cleanup_job).await?;
 
-    //Logger::set_new_logfile().await;
+    // use a new logfile
+    let new_logfile_cron_string = "0 1 0 * * * *";
+    let new_logfile_job = Job::new_async(new_logfile_cron_string, move |_uuid, _l| {
+        Box::pin(async move {
+            Logger::set_new_logfile().await;
+        })
+    })?;
+    scheduler.add(new_logfile_job).await?;
 
     Ok(scheduler)
 }
