@@ -11,6 +11,7 @@ use std::sync::{Mutex, OnceLock};
 const LOG_ENTRY_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 const LOG_FILE_NAME_DATE_FORMAT: &str = "%Y-%m-%d";
 const LOG_FILE_REGEX: &str = r"^log-(\d{4})-(\d{2})-(\d{2})\.txt$";
+const LOG_FILE_FORMAT: &str = "log-{}.txt";
 
 pub struct Logger {
     level: Level,
@@ -250,8 +251,10 @@ impl Logger {
     fn new_filename(path: String) -> String {
         let today = Utc::now();
         let today_string = today.format(LOG_FILE_NAME_DATE_FORMAT);
-        // TODO consider using `const-format` crate for using a CONST here
-        let file_name = format!("log-{}.txt", today_string);
+        let file_name = LOG_FILE_FORMAT
+            .to_string()
+            .replace("{}", today_string.to_string().as_str());
+        //let file_name = format!("log-{}.txt", today_string);
         path.clone() + file_name.as_str()
     }
 }
