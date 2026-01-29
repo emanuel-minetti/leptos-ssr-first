@@ -1,8 +1,8 @@
+use leptos_i18n_build::{Config, TranslationsInfos};
 use std::error::Error;
 use std::path::PathBuf;
-use leptos_i18n_build::{Config, TranslationsInfos};
 
-fn main() ->  Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     // trigger recompilation for sqlx
     println!("cargo:rerun-if-changed=migrations");
 
@@ -20,8 +20,7 @@ fn main() ->  Result<(), Box<dyn Error>> {
     translations_infos.rerun_if_locales_changed();
 
     // codegen
-    translations_infos
-        .generate_i18n_module(i18n_mod_directory)?;
+    translations_infos.generate_i18n_module(i18n_mod_directory)?;
 
     Ok(())
 }
