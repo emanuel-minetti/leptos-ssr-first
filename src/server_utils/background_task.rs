@@ -13,10 +13,10 @@ async fn session_cleanup_task(expiry_mins: u8, db_pool: Pool<Postgres>) {
     let ready_to_delete: NaiveDateTime =
         NaiveDateTime::new(ready_to_delete.date_naive(), ready_to_delete.time());
     let query_result = query!(
-        r#"
-                    DELETE FROM session
-                    WHERE expires_at < $1 ;
-                    "#,
+        "\
+        DELETE FROM session \
+        WHERE expires_at < $1;\
+        ",
         ready_to_delete
     )
     .execute(&db_pool)
@@ -37,12 +37,14 @@ pub async fn setup_scheduler(
     db_pool: Pool<Postgres>,
     config: Settings,
 ) -> Result<JobScheduler, JobSchedulerError> {
-    let expiry_mins = config.authorization.session_expiry_mins;
-    let session_cleanup_cron_string = format!("0 0/{} * * * *", expiry_mins);
     let db_pool = db_pool.clone();
     let scheduler = JobScheduler::new().await?;
     scheduler.start().await?;
 
+    // delete outdated sessions in database
+    let expiry_mins = config.authorization.session_expiry_mins;
+    // run one second past every <expiry_mins> minute
+    let session_cleanup_cron_string = format!("1 0/{} * * * *", expiry_mins);
     let session_cleanup_job = Job::new_async(session_cleanup_cron_string, move |_uuid, _l| {
         let db_pool = db_pool.clone();
         Box::pin(async move {
@@ -51,8 +53,10 @@ pub async fn setup_scheduler(
     })?;
     scheduler.add(session_cleanup_job).await?;
 
-    let logfile_cleanup_cron_string = "0 5 0 * * * *";
+    // delete outdated log files
     let log_settings = config.log.clone();
+    // run one second after five minutes after midnight
+    let logfile_cleanup_cron_string = "1 5 0 * * * *";
     let logfile_cleanup_job = Job::new_async(logfile_cleanup_cron_string, move |_uuid, _l| {
         let log_settings = log_settings.clone();
         Box::pin(async move {
@@ -62,7 +66,8 @@ pub async fn setup_scheduler(
     scheduler.add(logfile_cleanup_job).await?;
 
     // use a new logfile
-    let new_logfile_cron_string = "0 1 0 * * * *";
+    // run one second after one minute after midnight
+    let new_logfile_cron_string = "1 1 0 * * * *";
     let new_logfile_job = Job::new_async(new_logfile_cron_string, move |_uuid, _l| {
         Box::pin(async move {
             Logger::set_new_logfile().await;
