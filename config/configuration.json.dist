@@ -1,19 +1,19 @@
 {
   "database": {
-    "host": "localhost",
-    "port": 5432,
-    "username": "lsf",
-    "password": "lsf",
-    "database_name": "lsf"
+    "host": <db host>,
+    "port": <db port>,
+    "username": <db username>,
+    "password": <db password>,
+    "database_name": <db db-name>
   },
   "log": {
-    "max_level": "DEBUG",
-    "path": "log/",
-    "days_to_keep": 2
+    "max_level": <a log level>,
+    "path": <a path relative to pwd>,
+    "days_to_keep": <number of days (u8)>
   },
   "authorization": {
-    "session_secret": [61, 85, 47, 187, 248, 134, 110, 255, 177, 180, 10, 207, 147, 209, 120, 139],
-    "dummy_bcrypt_hash": "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G",
+    "session_secret": <a vector of u8>,
+    "dummy_bcrypt_hash": <a bcrypt hash (with default cost) of an arbitrary password>,
     "session_expiry_mins": <an integer dividing 60>
   }
 }
