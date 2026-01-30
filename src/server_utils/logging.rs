@@ -1,7 +1,7 @@
 use crate::server_utils::configuration::LogSettings;
 use chrono::prelude::*;
 use chrono::{Days, LocalResult};
-use log::{log, Level, SetLoggerError};
+use log::{log, Level, LevelFilter, SetLoggerError};
 use regex::Regex;
 use std::collections::HashMap;
 use std::env;
@@ -18,6 +18,7 @@ pub struct Logger {
     level: Level,
     path: String,
     file: Mutex<File>,
+    env: String,
 }
 
 static LOGGER: OnceLock<Logger> = OnceLock::new();
@@ -31,24 +32,23 @@ impl log::Log for Logger {
         if self.enabled(record.metadata()) {
             let file = &mut self.file.try_lock().expect("Couldn't lock log file");
             let now = Utc::now().format(LOG_ENTRY_DATE_FORMAT);
-            println!(
+            writeln!(
+                file,
                 "{} [{}]: ({}) {}",
                 now,
                 record.level(),
                 record.target(),
                 record.args()
-            );
-            let env = env::var("ENV").unwrap_or_else(|_| "DEV".to_string());
-            if env == "DEV" {
-                writeln!(
-                    file,
+            )
+                .expect("Could not write to log file");
+            if self.env == "DEV" {
+                println!(
                     "{} [{}]: ({}) {}",
                     now,
                     record.level(),
                     record.target(),
                     record.args()
-                )
-                .expect("Could not write to log file");
+                );
             }
 
             file.flush().unwrap();
@@ -227,7 +227,8 @@ impl Logger {
     }
 
     pub async fn init(config: LogSettings) -> Result<(), SetLoggerError> {
-        log::set_logger(Self::new(config).await)
+        let max_level: LevelFilter = config.max_level.to_level_filter();
+        log::set_logger(Self::new(config).await).map(|()| log::set_max_level(max_level))
     }
 
     async fn new(settings: LogSettings) -> &'static Self {
@@ -238,6 +239,7 @@ impl Logger {
             level: settings.max_level,
             path: settings.path_string,
             file: Mutex::new(file),
+            env: env::var("ENV").unwrap_or_else(|_| "DEV".to_string()),
         })
     }
 
