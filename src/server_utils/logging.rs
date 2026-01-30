@@ -1,9 +1,10 @@
 use crate::server_utils::configuration::LogSettings;
 use chrono::prelude::*;
 use chrono::{Days, LocalResult};
-use log::{log, Level, LevelFilter, SetLoggerError};
+use log::{log, Level, SetLoggerError};
 use regex::Regex;
 use std::collections::HashMap;
+use std::env;
 use std::fs::{read_dir, remove_file, DirEntry, File};
 use std::io::Write;
 use std::sync::{Mutex, OnceLock};
@@ -28,7 +29,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let file = &mut self.file.try_lock().unwrap();
+            let file = &mut self.file.try_lock().expect("Couldn't lock log file");
             let now = Utc::now().format(LOG_ENTRY_DATE_FORMAT);
             println!(
                 "{} [{}]: ({}) {}",
@@ -37,15 +38,19 @@ impl log::Log for Logger {
                 record.target(),
                 record.args()
             );
-            writeln!(
-                file,
-                "{} [{}]: ({}) {}",
-                now,
-                record.level(),
-                record.target(),
-                record.args()
-            )
-            .expect("Could not write to log file");
+            let env = env::var("ENV").unwrap_or_else(|_| "DEV".to_string());
+            if env == "DEV" {
+                writeln!(
+                    file,
+                    "{} [{}]: ({}) {}",
+                    now,
+                    record.level(),
+                    record.target(),
+                    record.args()
+                )
+                .expect("Could not write to log file");
+            }
+
             file.flush().unwrap();
         }
     }
@@ -55,8 +60,8 @@ impl log::Log for Logger {
 
 impl Logger {
     pub async fn set_new_logfile() {
-        let this = LOGGER.get().unwrap();
-        let mut file = this.file.lock().unwrap();
+        let this = LOGGER.get().expect("LOGGER not initialized");
+        let mut file = this.file.lock().expect("Couldn't lock log file");
         *file = Self::open_file(this.path.clone());
     }
 
@@ -190,7 +195,6 @@ impl Logger {
                 }
             }
         }
-
         // remove outdated log files
         for (file_name, date_option) in &files_in_dir_map.clone() {
             if date_option.is_some() {
@@ -223,8 +227,7 @@ impl Logger {
     }
 
     pub async fn init(config: LogSettings) -> Result<(), SetLoggerError> {
-        let max_level: LevelFilter = config.max_level.to_level_filter();
-        log::set_logger(Self::new(config).await).map(|()| log::set_max_level(max_level))
+        log::set_logger(Self::new(config).await)
     }
 
     async fn new(settings: LogSettings) -> &'static Self {
@@ -245,6 +248,7 @@ impl Logger {
             .create(true)
             .open(file_path)
             .expect("Unable to open log file");
+
         file
     }
 
@@ -254,7 +258,7 @@ impl Logger {
         let file_name = LOG_FILE_FORMAT
             .to_string()
             .replace("{}", today_string.to_string().as_str());
-        //let file_name = format!("log-{}.txt", today_string);
+
         path.clone() + file_name.as_str()
     }
 }
