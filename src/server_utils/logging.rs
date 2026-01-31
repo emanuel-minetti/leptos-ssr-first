@@ -62,6 +62,7 @@ impl Logger {
     pub async fn set_new_logfile() {
         let this = LOGGER.get().expect("LOGGER not initialized");
         let mut file = this.file.lock().expect("Couldn't lock log file");
+        log!(Level::Info, "Setting new log file to {}", this.path);
         *file = Self::open_file(this.path.clone());
     }
 
