@@ -1,5 +1,6 @@
-- Review logging.
 - Get client configuration from the server
 - Get MOTD from the server
-- Retrieve session on reload from session storage if applicable
 - Add e2e tests
+- Add a CI pipeline (maybe using GitHub actions)
+- Retrieve session on reload from session storage if applicable
+- Add modal to warn if login expires
