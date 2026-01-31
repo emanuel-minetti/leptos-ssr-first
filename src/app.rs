@@ -1,6 +1,7 @@
 use crate::i18n::{use_i18n, Locale};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
+use crate::layout::server_message::ServerMessage;
 use crate::model::user::User;
 use crate::pages::home_page::HomePage;
 use crate::pages::imprint::Imprint;
@@ -114,6 +115,7 @@ pub fn App() -> impl IntoView {
                 .children(ToChildren::to_children(move || {
                     (
                         { NavBar(NavBarProps::builder().lang_setter(set_lang).build()) },
+                        { ServerMessage },
                         {
                             main().child(Routes(
                                 RoutesProps::builder()
