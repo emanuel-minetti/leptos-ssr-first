@@ -150,9 +150,9 @@ where
 
             // authenticate
             let session_row = match query!(
-                r#"
-                SELECT account_id, expires_at FROM session WHERE id = $1
-                "#,
+                "\
+                SELECT account_id, expires_at FROM session WHERE id = $1\
+                ",
                 session_id
             )
             .fetch_optional(db_pool)
@@ -186,11 +186,11 @@ where
             // now we know the session is authenticated and not expired, so update session
             let account_id = session_row.account_id;
             let updated_session_row_result = query!(
-                r#"
-                UPDATE session SET expires_at = DEFAULT
-                WHERE id = $1
-                RETURNING expires_at
-                "#,
+                "\
+                UPDATE session SET expires_at = DEFAULT \
+                WHERE id = $1 \
+                RETURNING expires_at \
+                ",
                 session_id
             )
             .fetch_one(db_pool)

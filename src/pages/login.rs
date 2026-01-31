@@ -285,11 +285,11 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
         Ok(params) => params,
     };
     let account_row_result = query!(
-        r#"
-            SELECT pw_hash, id
-            FROM account
-            WHERE username = $1
-        "#,
+        "\
+            SELECT pw_hash, id \
+            FROM account \
+            WHERE username = $1 \
+        ",
         params.username
     )
     .fetch_optional(&**db_pool)
@@ -312,7 +312,7 @@ pub async fn login(params: LoginCallParams) -> Result<ApiResponse<()>, ServerFnE
                     return return_early(ApiError::InvalidCredentials);
                 }
                 let session_row = query!(
-                    r#"INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at"#,
+                    "INSERT INTO session (account_id) VALUES ($1) RETURNING id, expires_at",
                     account_row_record.id
                 )
                 .fetch_one(&**db_pool)
@@ -358,11 +358,11 @@ pub async fn get_user() -> Result<ApiResponse<User>, ServerFnError> {
     let token = req.extensions_mut().get::<String>().unwrap().to_string();
     let expires_at = req.extensions_mut().get::<i64>().unwrap().clone();
     let user_row_result = query!(
-        r#"
-            SELECT name, preferred_language as "preferred_language: Language"
-            FROM account
-            WHERE id = $1
-        "#,
+        "\
+            SELECT name, preferred_language as \"preferred_language: Language\" \
+            FROM account \
+            WHERE id = $1 \
+        ",
         account_id
     );
     let user_row = user_row_result
