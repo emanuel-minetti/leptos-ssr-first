@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "level": "Info",
+  "de": {
+    "message": "Das ist die Server Mitteilung!",
+    "emphasized": []
+  },
+  "en": {
+    "message": "This is the server message!",
+    "emphasized": []
+  }
+}
