@@ -49,6 +49,9 @@ async fn main() -> std::io::Result<()> {
         let db_pool_clone = db_pool.clone();
         let jwt_keys_clone = jwt_keys.clone();
         let dummy_hash_clone = dummy_hash.clone();
+        let db_pool_clone_1 = db_pool.clone();
+        let jwt_keys_clone_1 = jwt_keys.clone();
+        let dummy_hash_clone_1 = dummy_hash.clone();
         //LSF CODE END
 
         println!("listening on http://{}", &addr);
@@ -64,6 +67,7 @@ async fn main() -> std::io::Result<()> {
                     .route(
                         "/{func_name:.*}",
                         handle_server_fns_with_context(move || {
+                            // remember to provide the same context for `leptos_routes_with_context`
                             provide_context(Data::new(db_pool_clone.clone()));
                             provide_context(Data::new(jwt_keys_clone.clone()));
                             provide_context(Data::new(dummy_hash_clone.clone()));
@@ -77,7 +81,11 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/assets", &site_root))
             // serve the favicon from /favicon.ico
             .service(favicon)
-            .leptos_routes(routes, {
+            .leptos_routes_with_context(routes, {move || {
+                provide_context(Data::new(db_pool_clone_1.clone()));
+                provide_context(Data::new(jwt_keys_clone_1.clone()));
+                provide_context(Data::new(dummy_hash_clone_1.clone()));
+            }} ,{
                 let leptos_options = leptos_options.clone();
                 move || shell(leptos_options.clone())
             })

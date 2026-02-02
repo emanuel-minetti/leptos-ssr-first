@@ -57,6 +57,9 @@ where
         let srv = self.service.clone();
         // grab url path from request to care of 'login'
         let is_login = req.path().starts_with("/api/login");
+        // grab url path from request to care of 'get_message'
+        let is_get_message = req.path().starts_with("/api/get_message");
+        let needs_authorization = !(is_login || is_get_message);
 
         async fn authorize(req: &ServiceRequest, db_pool: &Pool<Postgres>) -> Option<ApiError> {
             let jwt_keys = match req.app_data::<Data<JwtKeys>>() {
@@ -216,7 +219,7 @@ where
         }
 
         Box::pin(async move {
-            if !is_login {
+            if needs_authorization {
                 let db_pool = match req.app_data::<Data<Pool<Postgres>>>() {
                     None => {
                         let error_msg = "No DB pool found in request";
@@ -261,7 +264,7 @@ where
             // call other middleware and handler and get the response
             let res = srv.call(req).await?;
             let _request = res.request().clone();
-            if !is_login {
+            if needs_authorization {
                 // add code here if it is to be called after the server fn
             }
             Ok(res.map_into_left_body())
