@@ -1,22 +1,24 @@
-use leptos::{component, server, IntoView};
 use leptos::html::{div, ElementChild};
+use leptos::prelude::{Await, AwaitProps};
+use leptos::{component, server, IntoView};
 use serde::{Deserialize, Serialize};
 use server_fn::ServerFnError;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 enum MessageOfTheDayLevel {
     #[default]
     Info,
-    Warn, Error
+    Warn,
+    Error,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 struct MessageOfTheDay {
     message: String,
     emphasized: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 pub struct ServerMessageOfTheDay {
     // default is false
     enabled: bool,
@@ -27,15 +29,23 @@ pub struct ServerMessageOfTheDay {
 
 #[component]
 pub fn ServerMessage() -> impl IntoView {
-    div().child("This is the server message")
+    div().child(Await(AwaitProps {
+        future: get_message(),
+        blocking: false,
+        children: |message| {
+            div().child(
+                "Server Message: ".to_owned() + message.as_ref().unwrap().de.message.as_str(),
+            )
+        },
+    }))
 }
 
-#[server(endpoint="get_message")]
+#[server(endpoint = "get_message")]
 pub async fn get_message() -> Result<ServerMessageOfTheDay, ServerFnError> {
+    use leptos::serde_json;
     use log::{log, Level};
     use std::fs::File;
     use std::io::Read;
-    use leptos::serde_json;
 
     let file_result = File::open("config/message_of_the_day.json");
     let mut file = match file_result {
