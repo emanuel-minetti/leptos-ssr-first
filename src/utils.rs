@@ -1,3 +1,5 @@
+use leptos::context::use_context;
+use leptos::prelude::ReadSignal;
 use crate::i18n::{use_i18n, Locale};
 
 pub fn get_lang_from_browser() -> Option<String> {
@@ -57,4 +59,8 @@ pub fn set_lang_to_i18n(lang: &str) {
     } else {
         i18n.set_locale(Locale::en);
     }
+}
+
+pub fn get_lang() -> ReadSignal<String> {
+    use_context::<ReadSignal<String>>().expect("lang missing from context")
 }
