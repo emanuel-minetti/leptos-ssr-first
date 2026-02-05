@@ -1,8 +1,10 @@
-use leptos::html::{div, ElementChild};
-use leptos::prelude::{Await, AwaitProps};
+use leptos::html::{div,          ElementChild};
+use leptos::prelude::{Get, IntoAny};
 use leptos::{component, server, IntoView};
+use leptos::server::OnceResource;
 use serde::{Deserialize, Serialize};
 use server_fn::ServerFnError;
+use crate::utils::get_lang;
 
 #[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 enum MessageOfTheDayLevel {
@@ -29,18 +31,36 @@ pub struct ServerMessageOfTheDay {
 
 #[component]
 pub fn ServerMessage() -> impl IntoView {
-    div().child(Await(AwaitProps {
-        future: get_message(),
-        blocking: false,
-        children: |message| {
-            div().child(
-                "Server Message: ".to_owned() + message.as_ref().unwrap().de.message.as_str(),
-            )
-        },
-    }))
+    let message_resource = OnceResource::new(get_message());
+    let lang = get_lang();
+    let message_of_day = move || match message_resource.get() {
+        None => {
+            div().child("Loading server message ...").into_any()
+        }
+        Some(result) => {
+            match result {
+                Ok(server_message) => {
+                    if server_message.enabled {
+                        if lang.get() == "de" {
+                            div().child(server_message.de.message).into_any()
+                        } else {
+                            div().child(server_message.en.message).into_any()
+                        }
+                    } else {
+                        "".into_any()
+                    }
+                }
+                Err(e) => {
+                    div().child("Server message error ...".to_string() + e.to_string().as_str()).into_any()
+                }
+            }
+        }
+    };
+
+    move || message_of_day()
 }
 
-#[server(endpoint = "get_message")]
+#[server]
 pub async fn get_message() -> Result<ServerMessageOfTheDay, ServerFnError> {
     use leptos::serde_json;
     use log::{log, Level};
