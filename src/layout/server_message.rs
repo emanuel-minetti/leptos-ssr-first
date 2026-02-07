@@ -1,10 +1,10 @@
-use leptos::html::{div,          ElementChild};
+use crate::utils::get_lang;
+use leptos::html::{div, ElementChild};
 use leptos::prelude::{Get, IntoAny, Read};
-use leptos::{component, server, IntoView};
 use leptos::server::OnceResource;
+use leptos::{component, server, IntoView};
 use serde::{Deserialize, Serialize};
 use server_fn::ServerFnError;
-use crate::utils::get_lang;
 
 #[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 enum MessageOfTheDayLevel {
@@ -35,30 +35,32 @@ pub fn ServerMessage() -> impl IntoView {
     let lang = get_lang();
 
     div().child(move || match message_resource.get() {
-        None => {
-            "Loading server message ...".into_any()
-        }
-        Some(result) => {
-            match result {
-                Ok(server_message) => {
-                    if server_message.enabled {
-                        if (move || lang.read() == "de".to_string())() {
-                            server_message.de.message.into_any()
-                        } else if (move || lang.read() == "en".to_string())() {
-                            server_message.en.message.into_any()
-                        } else {
-                            "".into_any()
-                        }
-                    } else {
-                        "".into_any()
-                    }
-                }
-                Err(e) => {
-                    ("Server message error ...".to_string() + e.to_string().as_str()).into_any()
+        None => "Loading server message ...".into_any(),
+        Some(result) => match result {
+            Ok(server_message) => {
+                if server_message.enabled && ["de", "en"].contains(&lang.read().as_str()) {
+                    show_message(server_message).into_any()
+                } else {
+                    "".into_any()
                 }
             }
-        }
+            Err(e) => ("Server message error: ".to_string() + e.to_string().as_str()).into_any(),
+        },
     })
+}
+
+fn show_message(message: ServerMessageOfTheDay) -> impl IntoView {
+    let lang = get_lang();
+
+    if (move || lang.read() == "de".to_string())() {
+        show_localized_message(message.de)
+    } else {
+        show_localized_message(message.en)
+    }
+}
+
+fn show_localized_message(message: MessageOfTheDay) -> impl IntoView {
+    message.message
 }
 
 #[server]
