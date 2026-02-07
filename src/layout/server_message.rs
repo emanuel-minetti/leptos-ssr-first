@@ -1,5 +1,5 @@
 use leptos::html::{div,          ElementChild};
-use leptos::prelude::{Get, IntoAny};
+use leptos::prelude::{Get, IntoAny, Read};
 use leptos::{component, server, IntoView};
 use leptos::server::OnceResource;
 use serde::{Deserialize, Serialize};
@@ -33,31 +33,32 @@ pub struct ServerMessageOfTheDay {
 pub fn ServerMessage() -> impl IntoView {
     let message_resource = OnceResource::new(get_message());
     let lang = get_lang();
-    let message_of_day = move || match message_resource.get() {
+
+    div().child(move || match message_resource.get() {
         None => {
-            div().child("Loading server message ...").into_any()
+            "Loading server message ...".into_any()
         }
         Some(result) => {
             match result {
                 Ok(server_message) => {
                     if server_message.enabled {
-                        if lang.get() == "de" {
-                            div().child(server_message.de.message).into_any()
+                        if (move || lang.read() == "de".to_string())() {
+                            server_message.de.message.into_any()
+                        } else if (move || lang.read() == "en".to_string())() {
+                            server_message.en.message.into_any()
                         } else {
-                            div().child(server_message.en.message).into_any()
+                            "".into_any()
                         }
                     } else {
                         "".into_any()
                     }
                 }
                 Err(e) => {
-                    div().child("Server message error ...".to_string() + e.to_string().as_str()).into_any()
+                    ("Server message error ...".to_string() + e.to_string().as_str()).into_any()
                 }
             }
         }
-    };
-
-    move || message_of_day()
+    })
 }
 
 #[server]
