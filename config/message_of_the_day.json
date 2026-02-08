@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "level": "Warn",
+  "level": "Error",
   "de": {
     "message": "Das ist die Server Mitteilung!",
     "emphasized": []

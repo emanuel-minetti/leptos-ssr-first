@@ -15,12 +15,12 @@ enum MessageOfTheDayLevel {
 }
 
 impl MessageOfTheDayLevel {
-    fn to_alert_class(&self) -> &'static str {
-        match self {
-            MessageOfTheDayLevel::Info => "alert alert-info",
-            MessageOfTheDayLevel::Warn => "alert alert-warning",
-            MessageOfTheDayLevel::Error => "alert alert-danger",
-        }
+    fn to_alert_class(&self) -> String {
+        format!("text-center alert alert-{}", match self {
+            MessageOfTheDayLevel::Info => "info",
+            MessageOfTheDayLevel::Warn => "warning",
+            MessageOfTheDayLevel::Error => "danger",
+        })
     }
 }
 
