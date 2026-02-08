@@ -14,6 +14,16 @@ enum MessageOfTheDayLevel {
     Error,
 }
 
+impl MessageOfTheDayLevel {
+    fn to_alert_class(&self) -> &'static str {
+        match self {
+            MessageOfTheDayLevel::Info => "alert alert-info",
+            MessageOfTheDayLevel::Warn => "alert alert-warning",
+            MessageOfTheDayLevel::Error => "alert alert-danger",
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 struct MessageOfTheDay {
     message: String,
@@ -56,11 +66,7 @@ fn show_message(message: &ServerMessageOfTheDay) -> impl IntoView {
     } else {
         show_localized_message(message.en.clone())
     };
-    let class_string = move || match message.level {
-        MessageOfTheDayLevel::Info => {"alert alert-info"}
-        MessageOfTheDayLevel::Warn => {"alert alert-warning"}
-        MessageOfTheDayLevel::Error => {"alert alert-danger"}
-    };
+    let class_string =  move || message.level.to_alert_class();
 
     div().class(class_string()).child(localized_message)
 }
