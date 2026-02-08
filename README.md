@@ -6,10 +6,15 @@
 
 Leptos-SSR-First is A template for a Leptos SSR web app for internal use.
 Most of its pages and API calls are authenticated,
-the use of HTTP status codes is avoided, and it should be localizable.
+the use of HTTP status codes is avoided, and it is localizable.
+
+Currently, only two languages are supported (en and de). Replacing a Langunguge should be painless. Adding more than one
+languages would
+maybe require architectural changes.
+
 Bootstrap is used for styling.
 
-# Installation and Running 
+# Installation and Running
 
 - Install `nodejs`
 - Run `npm install`
@@ -20,7 +25,7 @@ Bootstrap is used for styling.
 - Install `cargo-leptos` via cargo (wait a bit)
 - Install `sqlx-cli` and `cargo-make` via cargo
 - Install `postgresql` and `postgresql-client` via apt
-- Create a user and database in Postgresql. (Make sure the app can connect to it.) 
+- Create a user and database in Postgresql. (Make sure the app can connect to it.)
 - Run `sqlx database setup`.
 - Copy `config/configuration.json.dist` to `config/configuration.json` and adjust accordingly.
 - Copy `.env.dist` to `.env` and adjust accordingly.

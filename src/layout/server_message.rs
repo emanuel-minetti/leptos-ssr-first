@@ -1,6 +1,6 @@
 use crate::utils::get_lang;
 use leptos::html::{div, ElementChild};
-use leptos::prelude::{Get, IntoAny, Read};
+use leptos::prelude::{ClassAttribute, Get, IntoAny, Read};
 use leptos::server::OnceResource;
 use leptos::{component, server, IntoView};
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ pub fn ServerMessage() -> impl IntoView {
         Some(result) => match result {
             Ok(server_message) => {
                 if server_message.enabled && ["de", "en"].contains(&lang.read().as_str()) {
-                    show_message(server_message).into_any()
+                    show_message(&server_message).into_any()
                 } else {
                     "".into_any()
                 }
@@ -49,14 +49,20 @@ pub fn ServerMessage() -> impl IntoView {
     })
 }
 
-fn show_message(message: ServerMessageOfTheDay) -> impl IntoView {
+fn show_message(message: &ServerMessageOfTheDay) -> impl IntoView {
     let lang = get_lang();
-
-    if (move || lang.read() == "de".to_string())() {
-        show_localized_message(message.de)
+    let localized_message = if (move || lang.read() == "de".to_string())() {
+        show_localized_message(message.de.clone())
     } else {
-        show_localized_message(message.en)
-    }
+        show_localized_message(message.en.clone())
+    };
+    let class_string = move || match message.level {
+        MessageOfTheDayLevel::Info => {"alert alert-info"}
+        MessageOfTheDayLevel::Warn => {"alert alert-warning"}
+        MessageOfTheDayLevel::Error => {"alert alert-danger"}
+    };
+
+    div().class(class_string()).child(localized_message)
 }
 
 fn show_localized_message(message: MessageOfTheDay) -> impl IntoView {
