@@ -1,5 +1,5 @@
 use crate::utils::get_lang;
-use leptos::html::{div, em, strong, ElementChild};
+use leptos::html::{div, strong, ElementChild};
 use leptos::prelude::{AnyView, ClassAttribute, Get, IntoAny, Read};
 use leptos::server::OnceResource;
 use leptos::{component, server, IntoView};
@@ -30,7 +30,7 @@ impl MessageOfTheDayLevel {
 #[derive(Serialize, Default, Clone, PartialEq)]
 struct MessageOfTheDay {
     message: String,
-    emphasized: Vec<String>,
+    strongish: Vec<String>,
 }
 
 impl<'de> Deserialize<'de> for MessageOfTheDay {
@@ -38,22 +38,22 @@ impl<'de> Deserialize<'de> for MessageOfTheDay {
         #[derive(Deserialize)]
         struct MessageOfTheDayHelper {
             message: String,
-            emphasized: Vec<String>,
+            strongish: Vec<String>,
         }
 
         let helper = MessageOfTheDayHelper::deserialize(deserializer)?;
         let placeholder_count = helper.message.matches("{}").count();
-        if placeholder_count != helper.emphasized.len() {
+        if placeholder_count != helper.strongish.len() {
             return Err(serde::de::Error::custom(format!(
                 "Message placeholder count ({}) does not match emphasized array length ({})",
                 placeholder_count,
-                helper.emphasized.len()
+                helper.strongish.len()
             )));
         }
 
         Ok(MessageOfTheDay {
             message: helper.message,
-            emphasized: helper.emphasized,
+            strongish: helper.strongish,
         })
     }
 }
@@ -110,14 +110,14 @@ fn show_message(message: &ServerMessageOfTheDay) -> impl IntoView {
 
 fn show_localized_message(message: MessageOfTheDay) -> impl IntoView {
     let raw_message = message.message.clone() + "{}";
-    let mut emphasized = message.emphasized.iter();
+    let mut strongish = message.strongish.iter();
     let raw_message_parts = raw_message.as_str().split("{}").collect::<Vec<&str>>();
     let mut message_children_vec: Vec<AnyView> = vec![];
     raw_message_parts.iter().for_each(|part| {
         message_children_vec.push(part.into_any());
         message_children_vec.push(
             strong()
-                .child(emphasized.next().unwrap_or(&"".to_string()).as_str())
+                .child(strongish.next().unwrap_or(&"".to_string()).as_str())
                 .into_any(),
         );
     });

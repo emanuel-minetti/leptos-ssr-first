@@ -3,10 +3,10 @@
   "level": "Error",
   "de": {
     "message": "Das ist {} Server Mitteilung{}",
-    "emphasized": ["die", "!"]
+    "strongish": ["die", "!"]
   },
   "en": {
     "message": "This is the server {}!",
-    "emphasized": ["message"]
+    "strongish": ["message"]
   }
 }
