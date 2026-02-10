@@ -28,6 +28,7 @@ Bootstrap is used for styling.
 - Create a user and database in Postgresql. (Make sure the app can connect to it.)
 - Run `sqlx database setup`.
 - Copy `config/configuration.json.dist` to `config/configuration.json` and adjust accordingly.
+- Copy `config/message_of_the_day.json.dist` to `config/message_of_the_day.json` and adjust accordingly.
 - Copy `.env.dist` to `.env` and adjust accordingly.
 - Run `cargo leptos serve` and enjoy.
     
