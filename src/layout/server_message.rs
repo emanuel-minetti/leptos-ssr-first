@@ -27,6 +27,45 @@ impl MessageOfTheDayLevel {
     }
 }
 
+/// Represents a "Message of the Day" structure containing the message to be rendered.
+///
+/// The `MessageOfTheDay` struct is designed to hold a format string
+/// and a collection of strings to be rendered strongish. The format string is rendered literally
+/// except for `{}` substrings which are replaced by members of the collections respecting their
+/// order. The number of `{}` substrings and the length of the collection must match to be
+/// serialized (e.g., from a file)
+///
+/// # Attributes
+/// - `message` (`String`): The format string for the message.
+/// - `strongish` (`Vec<String>`): A collection of the strongish parts of the message.
+///
+/// # Implements
+/// - `Deserialize`: Checks whether matches in format string and length of `strongish` match.
+///
+/// # Derives
+/// - `Serialize`: Enables the struct to be serialized (e.g., to JSON or other formats).
+/// - `Default`: Provides a default implementation for the struct, initializing `message` as an
+///         empty string and `strongish` as an empty vector.
+/// - `Clone`: Allows for creating a duplicate of the struct.
+/// - `PartialEq`: Enables comparison of two `MessageOfTheDay` instances for equality.
+///
+/// # Example
+/// ```rust
+/// use leptos::ev::message;
+/// use serde::Serialize;
+///
+/// #[derive(Serialize, Default, Clone, PartialEq)]
+/// struct MessageOfTheDay {
+///     message: String,
+///     strongish: Vec<String>,
+/// }
+///
+/// let motd = MessageOfTheDay {
+///     message: String::from("{} to our application!"),
+///     strongish: vec![String::from("Welcome"),]
+/// };
+/// ```
+/// would render to `<strong>Welcome</strong> to our application!`.
 #[derive(Serialize, Default, Clone, PartialEq)]
 struct MessageOfTheDay {
     message: String,
@@ -58,6 +97,37 @@ impl<'de> Deserialize<'de> for MessageOfTheDay {
     }
 }
 
+/// Struct representing the "Message of the Day" configuration to be read from a file on the server.
+///
+/// This structure defines whether the message of the day feature is enabled,
+/// determines its level of importance, and provides localized versions of
+/// the message in German (de) and English (en).
+///
+/// # Fields
+///
+/// * `enabled` (`bool`) - Indicates whether the "Message of the Day" feature
+///   is active. Defaults to `false`.
+///
+/// * `level` (`MessageOfTheDayLevel`) - Specifies the importance or severity
+///   level of the message. This field must be provided explicitly.
+///
+/// * `de` (`MessageOfTheDay`) - Contains the German localized version
+///   of the "Message of the Day".
+///
+/// * `en` (`MessageOfTheDay`) - Contains the English localized version
+///   of the "Message of the Day".
+///
+/// # Traits
+///
+/// This struct derives several traits:
+/// * `Serialize` and `Deserialize` - Allow the struct to be serialized and
+///   deserialized using Serde.
+/// * `Default` - Provides a default value for the struct.
+/// * `Clone` - Enables cloning of the struct.
+/// * `PartialEq` - Allows for equality comparisons between instances.
+///
+/// # Example
+/// See "config/message_of_the_day.json.dist" for an example.
 #[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
 pub struct ServerMessageOfTheDay {
     // default is false

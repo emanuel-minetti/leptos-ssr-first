@@ -3,10 +3,15 @@
   "level": "Error",
   "de": {
     "message": "Das ist {} Server Mitteilung{}",
-    "strongish": ["die", "!"]
+    "strongish": [
+      "die",
+      "!"
+    ]
   },
   "en": {
     "message": "This is the server {}!",
-    "strongish": ["message"]
+    "strongish": [
+      "message"
+    ]
   }
 }

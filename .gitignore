@@ -17,3 +17,4 @@ node_modules
 /config/configuration.json
 /log/
 /.env
+/config/message_of_the_day.json
