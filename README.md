@@ -8,9 +8,8 @@ Leptos-SSR-First is A template for a Leptos SSR web app for internal use.
 Most of its pages and API calls are authenticated,
 the use of HTTP status codes is avoided, and it is localizable.
 
-Currently, only two languages are supported (en and de). Replacing a Langunguge should be painless. Adding more than one
-languages would
-maybe require architectural changes.
+Currently, only two languages are supported (en and de). Replacing a Langunguge should be painless. Adding more than
+one language would maybe require architectural changes.
 
 Bootstrap is used for styling.
 
@@ -31,4 +30,3 @@ Bootstrap is used for styling.
 - Copy `config/message_of_the_day.json.dist` to `config/message_of_the_day.json` and adjust accordingly.
 - Copy `.env.dist` to `.env` and adjust accordingly.
 - Run `cargo leptos serve` and enjoy.
-    
