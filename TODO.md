@@ -3,5 +3,4 @@
 - Add a CI pipeline (maybe using GitHub actions)
 - Retrieve session on reload from session storage if applicable
 - Add modal to warn if login expires
-- Optional: Review using OnceResource for the server message (if reloading the message every x hours is needed).
 - Optional: Get client configuration from the server
