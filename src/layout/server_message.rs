@@ -6,12 +6,30 @@ use leptos::{component, server, IntoView};
 use serde::{Deserialize, Deserializer, Serialize};
 use server_fn::ServerFnError;
 
-#[derive(Serialize, Deserialize, Default, Clone, PartialEq)]
+#[derive(Serialize, Default, Clone, PartialEq)]
 enum MessageOfTheDayLevel {
     #[default]
     Info,
     Warn,
     Error,
+}
+
+impl<'de> Deserialize<'de> for MessageOfTheDayLevel {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        let s = String::deserialize(deserializer)?;
+        if s.to_lowercase() == "info" {
+            Ok(MessageOfTheDayLevel::Info)
+        } else if s.to_lowercase() == "warn" {
+            Ok(MessageOfTheDayLevel::Warn)
+        } else if s.to_lowercase() == "error" {
+            Ok(MessageOfTheDayLevel::Error)
+        } else {
+            Err(serde::de::Error::custom("Unknown message level"))
+        }
+    }
 }
 
 impl MessageOfTheDayLevel {
