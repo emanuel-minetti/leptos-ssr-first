@@ -205,8 +205,8 @@ pub async fn get_message() -> Result<ServerMessageOfTheDay, ServerFnError> {
     let file_result = File::open("config/message_of_the_day.json");
     let mut file = match file_result {
         Ok(file) => file,
-        Err(_) => {
-            log!(Level::Warn, "Couldn't open message file");
+        Err(e) => {
+            log!(Level::Warn, "Couldn't open message file: {}", e.to_string());
             return Ok(ServerMessageOfTheDay::default());
         }
     };
