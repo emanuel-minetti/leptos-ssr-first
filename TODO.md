@@ -1,4 +1,3 @@
-- Get MOTD from the server
 - Add e2e tests
 - Add a CI pipeline (maybe using GitHub actions)
 - Retrieve session on reload from session storage if applicable
