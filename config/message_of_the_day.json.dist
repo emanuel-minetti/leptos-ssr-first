@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "level": "Error",
+  "de": {
+    "message": "Das ist {} Server Mitteilung{}",
+    "strongish": [
+      "die",
+      "!"
+    ]
+  },
+  "en": {
+    "message": "This is the server {}!",
+    "strongish": [
+      "message"
+    ]
+  }
+}

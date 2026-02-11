@@ -3,7 +3,7 @@ use crate::api::response::ApiResponse;
 use crate::i18n::*;
 use crate::model::user::User;
 use crate::utils::{
-    set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage,
+    get_lang, set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage,
 };
 use leptos::form::ActionForm;
 use leptos::html::*;
@@ -15,7 +15,7 @@ use leptos_router::hooks::{use_navigate, use_query_map};
 use leptos_router::NavigateOptions;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
-use web_sys::SubmitEvent;
+use web_sys::{HtmlFormElement, SubmitEvent};
 
 const USERNAME_MAX_LENGTH: u8 = 20;
 const PASSWORD_MAX_LENGTH: u8 = 32;
@@ -33,22 +33,24 @@ enum LoginCallParamsError {
 
 impl LoginCallParams {
     fn validated(&self) -> Result<LoginCallParams, LoginCallParamsError> {
-        let username = &self.username;
-        let username_graphems_length = username.chars().count();
-        let username_graphems_length_u8 =
-            <usize as TryInto<u8>>::try_into(username_graphems_length).unwrap_or_else(|_| u8::MAX);
-        if username.is_empty() || username_graphems_length_u8 > USERNAME_MAX_LENGTH {
+        if !self.length_validated(&self.username, USERNAME_MAX_LENGTH) {
             return Err(LoginCallParamsError::InvalidUsername);
         };
-        let password = &self.password;
-        let password_graphems_length = password.chars().count();
-        let password_graphems_length_u8 =
-            <usize as TryInto<u8>>::try_into(password_graphems_length).unwrap_or_else(|_| u8::MAX);
-        if password.is_empty() || password_graphems_length_u8 > PASSWORD_MAX_LENGTH {
+        if !self.length_validated(&self.password, PASSWORD_MAX_LENGTH) {
             return Err(LoginCallParamsError::InvalidPassword);
         };
 
         Ok(self.clone())
+    }
+
+    fn length_validated(&self, input: &String, max_size: u8) -> bool {
+        let graphemes_length_as_u8 = self.graphems_length_u8(input.chars().count());
+
+        !(input.is_empty() || graphemes_length_as_u8 > max_size)
+    }
+
+    fn graphems_length_u8(&self, usize: usize) -> u8 {
+        <usize as TryInto<u8>>::try_into(usize).unwrap_or_else(|_| u8::MAX)
     }
 }
 
@@ -59,7 +61,7 @@ pub fn Login(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let login = ServerAction::<Login>::new();
-    let lang = use_context::<ReadSignal<String>>().expect("lang missing from context");
+    let lang = get_lang();
     let orig_url = use_query_map()
         .get_untracked()
         .get("orig_url")
@@ -156,21 +158,15 @@ pub fn Login(
             ev.prevent_default();
         } else {
             let data = data.unwrap().clone();
-            let form: web_sys::HtmlFormElement = ev.target().unwrap().unchecked_into();
+            let form: HtmlFormElement = ev.target().unwrap().unchecked_into();
             match data.validated() {
                 Ok(_) => {}
                 Err(error) => match error {
                     LoginCallParamsError::InvalidUsername => {
-                        let input_div = form.children().get_with_index(0).unwrap();
-                        let input = input_div.children().get_with_index(1).unwrap();
-                        input.class_list().add_1("is-invalid").unwrap();
-                        ev.prevent_default();
+                        show_error(&ev, &form, 0);
                     }
                     LoginCallParamsError::InvalidPassword => {
-                        let input_div = form.children().get_with_index(1).unwrap();
-                        let input = input_div.children().get_with_index(1).unwrap();
-                        input.class_list().add_1("is-invalid").unwrap();
-                        ev.prevent_default();
+                        show_error(&ev, &form, 1);
                     }
                 },
             }
@@ -246,6 +242,13 @@ pub fn Login(
                 validated_on_client,
             ))
         }))
+}
+
+fn show_error(ev: &SubmitEvent, form: &HtmlFormElement, index: u32) {
+    let input_div = form.children().get_with_index(index).unwrap();
+    let input = input_div.children().get_with_index(1).unwrap();
+    input.class_list().add_1("is-invalid").unwrap();
+    ev.prevent_default();
 }
 
 #[server]

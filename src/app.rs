@@ -1,6 +1,7 @@
 use crate::i18n::{use_i18n, Locale};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
+use crate::layout::server_message::ServerMessage;
 use crate::model::user::User;
 use crate::pages::home_page::HomePage;
 use crate::pages::imprint::Imprint;
@@ -60,7 +61,9 @@ pub fn App() -> impl IntoView {
     i18n_signal.set_locale(Locale::en);
 
     // initializing the global value lang needed by non login pages
-    let (lang, set_lang) = signal("en".to_string());
+    // here the SSR lang is set, so for the reactiveness of the server message, it shouldn't match
+    // an existing lang
+    let (lang, set_lang) = signal("".to_string());
 
     let browser_lang = move || get_lang_from_browser();
 
@@ -114,6 +117,7 @@ pub fn App() -> impl IntoView {
                 .children(ToChildren::to_children(move || {
                     (
                         { NavBar(NavBarProps::builder().lang_setter(set_lang).build()) },
+                        { ServerMessage },
                         {
                             main().child(Routes(
                                 RoutesProps::builder()
