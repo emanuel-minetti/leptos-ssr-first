@@ -1,5 +1,6 @@
 - Add e2e tests
     - page
+      - has a page title
       - check imprint and privacy
     - languages
       - retrieving lang
