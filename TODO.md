@@ -1,4 +1,12 @@
 - Add e2e tests
+    - page
+      - check imprint and privacy
+    - languages
+      - retrieving lang
+      - setting lang
+    - login
+      - login works
+      - set lang via login
 - Add a CI pipeline (maybe using GitHub actions)
 - Retrieve session on reload from session storage if applicable
 - Add modal to warn if login expires
