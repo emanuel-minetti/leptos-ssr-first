@@ -1,6 +1,5 @@
 - Add e2e tests
-    - page
-      - has a page title
+    - layout (checked by id-attribute)
       - check imprint and privacy
     - languages
       - retrieving lang
@@ -8,6 +7,7 @@
     - login
       - login works
       - set lang via login
+- Add a page title to the layout
 - Add a CI pipeline (maybe using GitHub actions)
 - Retrieve session on reload from session storage if applicable
 - Add modal to warn if login expires
