@@ -1,6 +1,4 @@
 - Add e2e tests
-    - layout (checked by id-attribute)
-      - check imprint and privacy
     - languages
       - retrieving lang
       - setting lang
