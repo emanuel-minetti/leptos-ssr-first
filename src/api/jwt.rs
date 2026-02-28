@@ -21,9 +21,7 @@ impl JwtClaim {
 
         Self { session_id }
     }
-}
 
-impl JwtClaim {
     pub fn try_into_uuid(self) -> Result<Uuid, Error> {
         Uuid::from_str(&self.session_id)
     }
