@@ -1,52 +1,68 @@
-import {expect, Locator, Page, test} from '@playwright/test';
+import {expect, Page, test} from '@playwright/test';
 
-const german_login_title = "Anmelden";
-const english_login_title = "Login";
-const german_german = "Deutsch";
-const english_german = "German";
-const german_english = "Englisch";
-const english_english = "English";
-
-test.describe('browser lang is english', async () => {
-    test_lang_setting_and_reloading();
-});
-
-test.describe('browser lang is german', async () => {
-    test.use({locale: 'de'});
-    test_lang_setting_and_reloading(true);
-});
-
-function test_lang_setting_and_reloading(start_with_german = false) {
-    const login_title = start_with_german ? german_login_title : english_login_title;
-    const other_login_title = !start_with_german ? german_login_title : english_login_title;
-    const lang = start_with_german ? german_german : english_english;
-    const other_lang = start_with_german ? german_english : english_german;
-    const switched_lang = start_with_german ? english_english : german_german;
+test.describe('browser lang is english', () => {
     let page: Page;
-    let lang_select: Locator;
-    let heading: Locator;
 
     test.beforeAll(async ({browser}) => {
         page = await browser.newPage();
         await page.goto("/");
-        lang_select = page.getByRole("navigation").getByLabel("Language");
-        heading = page.getByRole("heading");
     });
+
     test.afterAll(async () => {
         await page.close();
     });
 
     test("browser lang is selected", async () => {
-        await expect(lang_select.locator('option[selected]')).toHaveText(lang);
-        await expect(heading).toHaveText(login_title);
+        const langSelect = page.getByRole("navigation").getByLabel("Language");
+        const heading = page.getByRole("heading");
+        await expect(langSelect.locator('option[selected]')).toHaveText("English");
+        await expect(heading).toHaveText("Login");
     });
 
     test("selected lang is used and preserved", async () => {
-        await lang_select.selectOption(other_lang);
-        await expect(lang_select.locator('option[selected]')).toHaveText(switched_lang);
-        await expect(heading).toHaveText(other_login_title);
+        const langSelect = page.getByRole("navigation").getByLabel("Language");
+        const heading = page.getByRole("heading");
+
+        await langSelect.selectOption("German");
+        await expect(langSelect.locator('option[selected]')).toHaveText("Deutsch");
+        await expect(heading).toHaveText("Anmelden");
+
         await page.reload();
-        await expect(lang_select.locator('option[selected]')).toHaveText(switched_lang);
-        await expect(heading).toHaveText(other_login_title);
+        await expect(langSelect.locator('option[selected]')).toHaveText("Deutsch");
+        await expect(heading).toHaveText("Anmelden");
     });
-}
+});
+
+test.describe('browser lang is german', () => {
+    test.use({locale: 'de'});
+    let page: Page;
+
+    test.beforeAll(async ({browser}) => {
+        page = await browser.newPage();
+        await page.goto("/");
+    });
+
+    test.afterAll(async () => {
+        await page.close();
+    });
+
+    test("browser lang is selected", async () => {
+        const langSelect = page.getByRole("navigation").getByLabel("Language");
+        const heading = page.getByRole("heading");
+        await expect(langSelect.locator('option[selected]')).toHaveText("Deutsch");
+        await expect(heading).toHaveText("Anmelden");
+    });
+
+    test("selected lang is used and preserved", async () => {
+        const langSelect = page.getByRole("navigation").getByLabel("Language");
+        const heading = page.getByRole("heading");
+
+        await langSelect.selectOption("Englisch");
+        await expect(langSelect.locator('option[selected]')).toHaveText("English");
+        await expect(heading).toHaveText("Login");
+
+        await page.reload();
+        await expect(langSelect.locator('option[selected]')).toHaveText("English");
+        await expect(heading).toHaveText("Login");
+    });
+});

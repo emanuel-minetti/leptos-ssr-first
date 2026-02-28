@@ -13,7 +13,7 @@ test.describe("browser lang", () => {
 
     test.describe("sets lang not to french", async () => {
         test.use({locale: 'fr'});
-        test("german page title is shown", async ({page}) => {
+        test("fallback to german when unsupported language", async ({page}) => {
             await page.goto("/");
             await expect(page.getByRole("heading")).toHaveText(german_login_title);
         });
