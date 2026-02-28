@@ -1,8 +1,7 @@
 - Add e2e tests
-    - login
-      - login works
-      - set lang via login
+  - set lang via login
 - Add a page title to the layout
+- Make Server Message testable (i.e., make it reloadable)
 - Add a CI pipeline (maybe using GitHub actions)
 - Retrieve session on reload from session storage if applicable
 - Add modal to warn if login expires
