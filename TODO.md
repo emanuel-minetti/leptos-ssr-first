@@ -1,7 +1,4 @@
 - Add e2e tests
-    - languages
-      - setting lang
-      - retrieving lang on cookie
     - login
       - login works
       - set lang via login
