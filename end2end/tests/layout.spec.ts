@@ -1,7 +1,7 @@
 import {test, expect, Page} from "@playwright/test";
 
 test.describe('layout', () => {
-  const login_url = /\/login\?orig_url=*/;
+  const login_url = /\/login\?orig_url=.*/;
   let page: Page;
 
   test.beforeEach(async ({ browser }) => {

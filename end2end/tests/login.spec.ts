@@ -1,6 +1,6 @@
 import {test, expect, Page} from '@playwright/test';
 
-const LOGIN_URL_PATTERN = /\/login\?orig_url=*/;
+const LOGIN_URL_PATTERN = /\/login\?orig_url=.*/;
 const VALID_USERNAME = "admin";
 const VALID_PASSWORD = "password";
 
