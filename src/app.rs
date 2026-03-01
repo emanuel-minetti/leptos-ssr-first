@@ -9,9 +9,8 @@ use crate::pages::login::{Login, LoginProps};
 use crate::pages::not_found::NotFound;
 use crate::pages::privacy::Privacy;
 use crate::utils::get_lang_from_browser;
-use leptos::html::main;
+use leptos::html::{body, head, header, html, main};
 use leptos::prelude::*;
-use leptos::tachys::html::element::{body, head, html};
 use leptos::tachys::html::{doctype, InertElement};
 use leptos_i18n::context::{init_i18n_context_with_options, I18nContextOptions};
 use leptos_i18n::I18nContext;
@@ -111,12 +110,15 @@ pub fn App() -> impl IntoView {
                 .id("leptos")
                 .build(),
         ),
-        Title(TitleProps::builder().text("Welcome to Leptos").build()),
+        Title(TitleProps::builder().text("Leptos SSR First").build()),
         Router(
             RouterProps::builder()
                 .children(ToChildren::to_children(move || {
                     (
-                        { NavBar(NavBarProps::builder().lang_setter(set_lang).build()) },
+                        {
+                            header()
+                                .child(NavBar(NavBarProps::builder().lang_setter(set_lang).build()))
+                        },
                         { ServerMessage },
                         {
                             main().child(Routes(

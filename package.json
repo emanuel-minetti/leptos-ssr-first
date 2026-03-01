@@ -10,5 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "bootstrap": "^5.3.8"
+  },
+  "devDependencies": {
+    "end2end": "file:./end2end"
   }
 }
