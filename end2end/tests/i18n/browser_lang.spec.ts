@@ -3,6 +3,7 @@ import {expect, test} from '@playwright/test';
 test.describe("browser lang", () => {
     const english_login_title = "Login";
     const german_login_title = "Anmelden"
+
     test.describe("sets lang to german", async () => {
         test.use({locale: 'de'});
         test("german page title is shown", async ({page}) => {
