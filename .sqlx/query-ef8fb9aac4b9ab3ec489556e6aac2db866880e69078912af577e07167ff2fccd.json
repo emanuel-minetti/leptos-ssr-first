@@ -1,0 +1,39 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE account\n            SET preferred_language = ($1::text)::lang\n        WHERE id = $2\n        RETURNING username, preferred_language as \"preferred_language: Language\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "preferred_language: Language",
+        "type_info": {
+          "Custom": {
+            "name": "lang",
+            "kind": {
+              "Enum": [
+                "en",
+                "de"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "ef8fb9aac4b9ab3ec489556e6aac2db866880e69078912af577e07167ff2fccd"
+}

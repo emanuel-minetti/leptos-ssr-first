@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT pw_hash, id FROM account WHERE username = $1 ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pw_hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "52b4d9954a8afc1b8e1d3c9388a754c38397bb6ec6f1ae80af87bc8399579a0d"
+}

@@ -42,7 +42,7 @@ pub async fn setup_scheduler(
     scheduler.start().await?;
 
     // delete outdated sessions in database
-    let expiry_mins = config.authorization.session_expiry_mins;
+    let expiry_mins = config.server.session_expiry_mins;
     // run one second past every <expiry_mins> minute
     let session_cleanup_cron_string = format!("1 0/{} * * * *", expiry_mins);
     let session_cleanup_job = Job::new_async(session_cleanup_cron_string, move |_uuid, _l| {

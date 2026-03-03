@@ -1,3 +1,4 @@
+use std::env;
 use log::log;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer};
@@ -7,7 +8,7 @@ use std::str::FromStr;
 pub struct Settings {
     pub database: DatabaseSettings,
     pub log: LogSettings,
-    pub authorization: AuthorizationSettings,
+    pub server: ServerSettings,
 }
 
 #[derive(Deserialize, Clone)]
@@ -49,7 +50,9 @@ where
 }
 
 #[derive(Deserialize, Clone)]
-pub struct AuthorizationSettings {
+pub struct ServerSettings {
+    pub host: String,
+    pub port: u16,
     pub session_secret: Vec<u8>,
     pub dummy_bcrypt_hash: String,
     #[serde(deserialize_with = "u8_to_expiry_filter")]
@@ -75,13 +78,17 @@ where
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     println!(
         "{:?}",
-        std::env::current_dir().expect("Couldn't get present working directory.")
+        env::current_dir().expect("Couldn't get present working directory.")
     );
+    let lst_env = env::var("LSF_ENV");
+    let config_path = if lst_env.is_ok() && lst_env.unwrap() == "TEST" {
+        "config/configuration.test.json"
+    } else {
+        "config/configuration.json"
+    };
     let settings = config::Config::builder()
-        .add_source(config::File::new(
-            "config/configuration.json",
-            config::FileFormat::Json,
-        ))
+        .add_source(config::File::new(config_path, config::FileFormat::Json))
         .build()?;
+
     settings.try_deserialize::<Settings>()
 }

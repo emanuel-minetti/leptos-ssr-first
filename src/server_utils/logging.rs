@@ -240,7 +240,7 @@ impl Logger {
             level: settings.max_level,
             path: settings.path_string,
             file: Mutex::new(file),
-            env: env::var("ENV").unwrap_or_else(|_| "DEV".to_string()),
+            env: env::var("LSF_ENV").unwrap_or_else(|_| "DEV".to_string()),
         })
     }
 

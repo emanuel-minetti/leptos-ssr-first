@@ -20,15 +20,18 @@ async fn main() -> std::io::Result<()> {
 
     //LEPTOS CODE
     let conf = get_configuration(None).unwrap();
-    let addr = conf.leptos_options.site_addr;
+    //let addr = conf.leptos_options.site_addr;
+    //let addr = "127.0.0.1:3000";
 
     //LSF CODE
     let configuration =
         configuration::get_configuration().expect("Couldn't read configuration file.");
+    let addr = format!("{}:{}", configuration.clone().server.host, configuration.clone().server.port).to_owned();
+    let addr_clone = addr.clone();
     let configuration_clone = configuration.clone();
     Logger::init(configuration.log).await.expect("Couldn't initialize logger");
-    let jwt_keys = api::jwt::get_jwt_keys(configuration.authorization.session_secret);
-    let dummy_hash = configuration.authorization.dummy_bcrypt_hash;
+    let jwt_keys = api::jwt::get_jwt_keys(configuration.server.session_secret);
+    let dummy_hash = configuration.server.dummy_bcrypt_hash;
     let db_url = configuration.database.connection_string();
     let db_pool = Pool::<Postgres>::connect(db_url.as_str())
         .await
@@ -54,7 +57,7 @@ async fn main() -> std::io::Result<()> {
         let dummy_hash_clone_1 = dummy_hash.clone();
         //LSF CODE END
 
-        println!("listening on http://{}", &addr);
+        println!("listening on http://{}", addr);
 
         App::new()
             //LSF CODE
@@ -92,7 +95,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(leptos_options.to_owned()))
         //.wrap(middleware::Compress::default())
     })
-    .bind(&addr)?
+    .bind(addr_clone)?
     .run()
     .await
 }
