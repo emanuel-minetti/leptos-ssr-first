@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import {test} from '../fixtures/database';
 import {expect} from '@playwright/test';
+import {LoginPage} from "../poms/loginPage";
 
 let client: PoolClient;
 const english_login_title = "Login";
@@ -17,7 +18,8 @@ test.afterEach(async () => {
 
 test('german user and english browser lang', async ({page, dbHelper}) => {
     const username = await dbHelper.addTestUser('de', client);
-    await page.goto("/");
-    await expect(page.getByRole("heading")).toHaveText(english_login_title);
-
+    const loginPage = new LoginPage(page);
+    await loginPage.navigate();
+    await expect(loginPage.heading).toHaveText(english_login_title);
+    await loginPage.login(username, 'password');
 });

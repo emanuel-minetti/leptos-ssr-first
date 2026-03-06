@@ -44,7 +44,6 @@ export class DatabaseHelper {
         const query = "INSERT\n\t" +
             "INTO account (username, pw_hash, name, preferred_language)\n\t" +
             "VALUES ($1, $2, $3, $4)";
-        console.log(query);
         await client.query(query, [username, hash, name, lang]);
         return username;
     }
