@@ -48,6 +48,7 @@ export class DatabaseHelper {
     }
 }
 
+// noinspection JSVoidFunctionReturnValueUsed
 export const test = base.extend<{}, {dbHelper: DatabaseHelper;}>({
     dbHelper: [
         async ({}, use, workerInfo) => {

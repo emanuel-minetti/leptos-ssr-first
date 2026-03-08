@@ -6,5 +6,6 @@
         <language minSize="26" name="Rust" />
       </Languages>
     </inspection_tool>
+    <inspection_tool class="TypeScriptValidateTypes" enabled="true" level="INFORMATION" enabled_by_default="true" />
   </profile>
 </component>
