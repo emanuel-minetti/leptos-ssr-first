@@ -1,16 +1,13 @@
 import {test as base} from '@playwright/test';
-import {Pool, PoolClient} from 'pg'
+import {Client} from 'pg'
 
 export class DatabaseHelper {
-    private pool: Pool | undefined;
-    private workerId: number;
+    private readonly client: Client;
+    private readonly workerId: number;
 
     constructor(id: number) {
         this.workerId = id;
-    }
-
-    async connect() {
-        this.pool = new Pool({
+        this.client = new Client({
             user: 'lsf',
             password: 'lsf',
             host: 'localhost',
@@ -19,24 +16,16 @@ export class DatabaseHelper {
         });
     }
 
-    async client() {
-        if (!this.pool) {
-            throw new Error('Database not connected. Call connect() first.');
-        }
-        return this.pool.connect();
+    async connect() {
+        await this.client.connect();
     }
 
     async query(sql: string, params: any[] = []) {
-        const client = await this.client();
-        try {
-            const result = await client.query(sql, params);
-            return result.rows;
-        } finally {
-            client.release();
-        }
+        const result = await this.client.query(sql, params);
+        return result.rows;
     }
 
-    async addTestUser(lang: string, client: PoolClient) {
+    async addTestUser(lang: string) {
         const username = lang + "_testuser_" + this.workerId;
         // 'password' hashed
         const hash = "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G";
@@ -44,12 +33,17 @@ export class DatabaseHelper {
         const query = "INSERT\n\t" +
             "INTO account (username, pw_hash, name, preferred_language)\n\t" +
             "VALUES ($1, $2, $3, $4)";
-        await client.query(query, [username, hash, name, lang]);
+        await this.client.query(query, [username, hash, name, lang]);
         return username;
     }
+
+    async deleteTestUser(username: string) {
+        const query = "DELETE FROM account WHERE username = $1";
+        await this.client.query(query, [username]);
+    }
     async disconnect() {
-        if (this.pool) {
-            await this.pool.end();
+        if (this.client) {
+            await this.client.end();
         }
     }
 }

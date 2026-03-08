@@ -57,7 +57,8 @@ async fn main() -> std::io::Result<()> {
         let dummy_hash_clone_1 = dummy_hash.clone();
         //LSF CODE END
 
-        println!("listening on http://{}", addr);
+        println!("listening on {}", addr);
+        println!("Database URL: {}", db_url);
 
         App::new()
             //LSF CODE

@@ -97,14 +97,14 @@ export default defineConfig({
   // outputDir: 'test-results/',
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'cargo leptos serve',
-    cwd: '../',
-    env: {
-      DATABASE_URL: 'postgres://lsftest:lsftest@localhost:5432/lsf_test',
-      LSF_ENV: 'TEST',
-    },
-    reuseExistingServer: !process.env.CI,
-    url: 'http://localhost:3456',
-  },
+  // webServer: {
+  //   command: 'cargo leptos serve',
+  //   cwd: '../',
+  //   env: {
+  //     DATABASE_URL: 'postgres://lsftest:lsftest@localhost:5432/lsf_test',
+  //     LSF_ENV: 'TEST',
+  //   },
+  //   reuseExistingServer: !process.env.CI,
+  //   url: 'http://localhost:3456',
+  // },
 });

@@ -6,8 +6,8 @@ export class LoginPage {
     private readonly usernameInput;
     private readonly passwordInput;
     private readonly loginButton;
-    readonly heading;
-    readonly langSelect;
+    heading;
+    langSelect;
 
     constructor(private readonly page: Page) {
         this.usernameInput = page.getByRole('textbox', {name: 'Username'});

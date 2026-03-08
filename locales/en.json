@@ -15,5 +15,6 @@
   "serverError": "Server Error: {{ error }}",
   "redirecting": "Redirecting ...",
   "usernameRequired": "Username is required",
-  "passwordRequired": "Password is required"
+  "passwordRequired": "Password is required",
+  "homePageTitle": "Home Page"
 }

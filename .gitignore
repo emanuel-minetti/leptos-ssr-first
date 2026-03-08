@@ -19,3 +19,4 @@ node_modules
 /.env
 /config/message_of_the_day.json
 /config/configuration.test.json
+/log_test/
