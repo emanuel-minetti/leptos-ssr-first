@@ -1,5 +1,3 @@
-- Add e2e tests
-  - use translations from locales directory for testing strings
 - Add a page title to the layout
 - Make Server Message testable (i.e., make it reloadable)
 - Review mobile window width.

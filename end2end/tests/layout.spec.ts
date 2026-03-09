@@ -1,8 +1,18 @@
-import {test, expect, Page} from "@playwright/test";
+import {expect, Page} from "@playwright/test";
+import {test} from "./fixtures/i18n"
 
 test.describe('layout', () => {
   const login_url = /\/login\?orig_url=.*/;
   let page: Page;
+  let imprintTitle: string;
+  let privacyTitle: string;
+  let loginTitle: string;
+
+  test.beforeAll(async ({i18nHelper}) => {
+    imprintTitle = i18nHelper.get("en", "imprint");
+    privacyTitle = i18nHelper.get("en", "privacy");
+    loginTitle = i18nHelper.get("en", "login");
+  });
 
   test.beforeEach(async ({ browser }) => {
     page = await browser.newPage();
@@ -28,8 +38,8 @@ test.describe('layout', () => {
 
   test("has footer", async () => {
     const footer = page.getByRole("contentinfo");
-    const imprint_link = footer.getByRole("link", {name: "Imprint"});
-    const privacy_link = footer.getByRole("link", { name: "Privacy Declaration"});
+    const imprint_link = footer.getByRole("link", {name: imprintTitle});
+    const privacy_link = footer.getByRole("link", { name: privacyTitle});
     await expect(imprint_link).toBeVisible();
     await expect(privacy_link).toBeVisible();
     const copyright_text = footer.getByText(/© 2025( - \d{2})? .+/);
@@ -40,17 +50,17 @@ test.describe('layout', () => {
     const navigation = page.getByRole("navigation");
     const home_link = navigation.getByRole("link", {name: "Leptos SSR First"});
     const footer = page.getByRole("contentinfo");
-    const imprint_link = footer.getByRole("link", {name: "Imprint"});
-    const privacy_link = footer.getByRole("link", { name: "Privacy Declaration"});
+    const imprint_link = footer.getByRole("link", {name: imprintTitle});
+    const privacy_link = footer.getByRole("link", { name: privacyTitle});
 
     await imprint_link.click();
     await expect(page).toHaveURL("/imprint");
-    await expect(page.getByRole('heading', { name: 'Imprint' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: imprintTitle })).toBeVisible();
     await privacy_link.click();
     await expect(page).toHaveURL("/privacy");
-    await expect(page.getByRole('heading', { name: 'Privacy Declaration' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: privacyTitle })).toBeVisible();
     await home_link.click();
     await expect(page).toHaveURL(login_url);
-    await expect(page.getByRole('heading', { name: 'Login' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: loginTitle })).toBeVisible();
   });
 });

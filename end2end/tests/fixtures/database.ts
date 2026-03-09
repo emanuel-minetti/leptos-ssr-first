@@ -3,7 +3,7 @@ import {Client} from 'pg'
 import * as fs from "node:fs/promises";
 
 
-export class DatabaseHelper {
+class DatabaseHelper {
     private client: Client | undefined;
     private readonly workerId: number;
 
