@@ -1,6 +1,4 @@
 - Add e2e tests
-  - test setting lang via login
-  - use config for db settings
   - use translations from locales directory for testing strings
 - Add a page title to the layout
 - Make Server Message testable (i.e., make it reloadable)
