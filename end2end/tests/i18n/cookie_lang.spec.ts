@@ -1,4 +1,4 @@
-import {expect, Page} from '@playwright/test';
+import {expect, Locator, Page} from '@playwright/test';
 import {test} from '../fixtures/i18n';
 
 let page: Page;
@@ -9,6 +9,9 @@ let germanGerman: string;
 let englishLogin: string;
 let germanLogin: string;
 
+let langSelect: Locator;
+let heading: Locator;
+
 test.beforeAll(async ({browser, i18nHelper}) => {
     page = await browser.newPage();
     await page.goto("/");
@@ -18,18 +21,17 @@ test.beforeAll(async ({browser, i18nHelper}) => {
     germanGerman = i18nHelper.get("de", "german");
     englishLogin = i18nHelper.get("en", "login");
     germanLogin = i18nHelper.get("de", "login");
+
+    langSelect  = page.getByRole("navigation").getByLabel("Language");
+    heading = page.getByRole("heading");
 });
 test.describe('browser lang is english', () => {
     test("browser lang is selected", async () => {
-        const langSelect = page.getByRole("navigation").getByLabel("Language");
-        const heading = page.getByRole("heading");
         await expect(langSelect.locator('option[selected]')).toHaveText(englishEnglish);
         await expect(heading).toHaveText(englishLogin);
     });
 
     test("selected lang is used and preserved", async () => {
-        const langSelect = page.getByRole("navigation").getByLabel("Language");
-        const heading = page.getByRole("heading");
         await langSelect.selectOption(englishGerman);
         await expect(langSelect.locator('option[selected]')).toHaveText(germanGerman);
         await expect(heading).toHaveText(germanLogin);
@@ -54,16 +56,11 @@ test.describe('browser lang is german', () => {
     });
 
     test("browser lang is selected", async () => {
-        const langSelect = page.getByRole("navigation").getByLabel("Language");
-        const heading = page.getByRole("heading");
         await expect(langSelect.locator('option[selected]')).toHaveText(germanGerman);
         await expect(heading).toHaveText(germanLogin);
     });
 
     test("selected lang is used and preserved", async () => {
-        const langSelect = page.getByRole("navigation").getByLabel("Language");
-        const heading = page.getByRole("heading");
-
         await langSelect.selectOption(germanEnglish);
         await expect(langSelect.locator('option[selected]')).toHaveText(englishEnglish);
         await expect(heading).toHaveText(englishLogin);

@@ -49,6 +49,17 @@ class DatabaseHelper {
         return username;
     }
 
+    async getUserLang(username: string) {
+        if (!this.client) {
+            throw new Error("Call connect() before using the client.");
+        }
+        const query = "SELECT preferred_language\n" +
+            "    FROM account\n" +
+            "    WHERE username = $1;"
+        const result = await this.client.query(query, [username]);
+        return result.rows[0].preferred_language;
+    }
+
     async deleteTestUser(username: string) {
         if (!this.client) {
             throw new Error("Call connect() before using the client.");

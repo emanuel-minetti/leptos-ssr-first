@@ -37,6 +37,10 @@ class LoginPage {
         await this.loginButton.click();
     }
 
+    async setLang(selectName: string) {
+        await this.langSelect.selectOption(selectName);
+    }
+
     async expectInvalidCredentialsError() {
         const text = this.i18nHelper.get(this.lang, "invalidCredentials")
         await expect(this.page.getByText(text)).toBeVisible();
