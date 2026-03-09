@@ -1,13 +1,13 @@
-import {test as base, expect, Page} from '@playwright/test';
+import {test as base, expect, Locator, Page} from '@playwright/test';
 
 const LOGIN_URL_PATTERN = /\/login\?orig_url=.*/;
 
 export class LoginPage {
     private readonly usernameInput;
     private readonly passwordInput;
-    private readonly loginButton;
-    heading;
-    langSelect;
+    private readonly loginButton: Locator;
+    readonly heading: Locator;
+    readonly langSelect: Locator;
 
     constructor(private readonly page: Page) {
         this.usernameInput = page.getByRole('textbox', {name: /(Username|Benutzername)/});
@@ -22,7 +22,8 @@ export class LoginPage {
         await expect(this.page).toHaveURL(LOGIN_URL_PATTERN);
     }
 
-    async login(username: string, password: string) {
+    // noinspection JSUnusedGlobalSymbols
+    async login(username: string, password = 'password') {
         await this.usernameInput.fill(username);
         await this.passwordInput.fill(password);
         await this.loginButton.click();
@@ -34,7 +35,7 @@ export class LoginPage {
     }
 }
 
-// noinspection JSVoidFunctionReturnValueUsed
+// noinspection JSVoidFunctionReturnValueUsed,JSUnusedGlobalSymbols
 export const test = base.extend<{loginPage: LoginPage;}>({
     loginPage: async ({ page }, use) => {
         await use(new LoginPage(page));
