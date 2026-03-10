@@ -1,5 +1,5 @@
 import {expect, Locator, Page} from '@playwright/test';
-import {test as base, I18n} from "./i18n";
+import {I18n, test as base} from "./i18n";
 
 const LOGIN_URL_PATTERN = /\/login\?orig_url=.*/;
 
@@ -49,8 +49,8 @@ class LoginPage {
 }
 
 // noinspection JSVoidFunctionReturnValueUsed,JSUnusedGlobalSymbols
-export const test = base.extend<{loginPage: LoginPage;}>({
-    loginPage: async ({ page, i18nHelper }, use) => {
+export const test = base.extend<{ loginPage: LoginPage; }>({
+    loginPage: async ({page, i18nHelper}, use) => {
         await page.goto("/");
         const lang = (await page.evaluate(() => navigator.language)).substring(0, 2);
         await use(new LoginPage(page, lang!, i18nHelper));
