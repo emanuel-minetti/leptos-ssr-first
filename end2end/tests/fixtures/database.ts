@@ -26,18 +26,14 @@ class DatabaseHelper {
         await this.client.connect();
     }
 
-    async query(sql: string, params: any[] = []) {
+    private async query(sql: string, params: any[] = []) {
         if (!this.client) {
             throw new Error("Call connect() before using the client.");
         }
-        const result = await this.client.query(sql, params);
-        return result.rows;
+        return await this.client.query(sql, params);
     }
 
     async addTestUser(lang: string) {
-        if (!this.client) {
-            throw new Error("Call connect() before using the client.");
-        }
         const username = lang + "_testuser_" + this.workerId;
         // 'password' hashed
         const hash = "$2a$12$2W3AcX2RnI3ZJSwrvWbar.x6FL.nK63niONl.d.mv39bTG5Ru/E9G";
@@ -45,28 +41,23 @@ class DatabaseHelper {
         const query = "INSERT\n\t" +
             "INTO account (username, pw_hash, name, preferred_language)\n\t" +
             "VALUES ($1, $2, $3, $4)";
-        await this.client.query(query, [username, hash, name, lang]);
+        await this.query(query, [username, hash, name, lang]);
         return username;
     }
 
     async getUserLang(username: string) {
-        if (!this.client) {
-            throw new Error("Call connect() before using the client.");
-        }
         const query = "SELECT preferred_language\n" +
             "    FROM account\n" +
             "    WHERE username = $1;"
-        const result = await this.client.query(query, [username]);
+        const result = await this.query(query, [username]);
         return result.rows[0].preferred_language;
     }
 
     async deleteTestUser(username: string) {
-        if (!this.client) {
-            throw new Error("Call connect() before using the client.");
-        }
         const query = "DELETE FROM account WHERE username = $1";
-        await this.client.query(query, [username]);
+        await this.query(query, [username]);
     }
+
     async disconnect() {
         if (this.client) {
             await this.client.end();
@@ -75,7 +66,7 @@ class DatabaseHelper {
 }
 
 // noinspection JSVoidFunctionReturnValueUsed
-export const test = base.extend<{}, {dbHelper: DatabaseHelper;}>({
+export const test = base.extend<{}, { dbHelper: DatabaseHelper; }>({
     dbHelper: [
         async ({}, use, workerInfo) => {
             const dbHelper = new DatabaseHelper(workerInfo.workerIndex);
