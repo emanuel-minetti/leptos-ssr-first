@@ -15,14 +15,14 @@ let heading: Locator;
 test.beforeAll(async ({browser, i18nHelper}) => {
     page = await browser.newPage();
     await page.goto("/");
-    englishEnglish =  i18nHelper.get("en", "english");
+    englishEnglish = i18nHelper.get("en", "english");
     englishGerman = i18nHelper.get("en", "german");
     germanEnglish = i18nHelper.get("de", "english");
     germanGerman = i18nHelper.get("de", "german");
     englishLogin = i18nHelper.get("en", "login");
     germanLogin = i18nHelper.get("de", "login");
 
-    langSelect  = page.getByRole("navigation").getByLabel("Language");
+    langSelect = page.getByRole("navigation").getByLabel("Language");
     heading = page.getByRole("heading");
 });
 test.describe('browser lang is english', () => {
