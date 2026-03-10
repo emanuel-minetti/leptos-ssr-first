@@ -30,24 +30,25 @@ test.describe("browser lang is english", async () => {
         await dbHelper.deleteTestUser(username);
     });
 
-    test('setting the lang as user is persisted in db and shown on next login', async ({page, dbHelper, loginPage, browser}) => {
-        const username = await dbHelper.addTestUser('en');
-        await loginPage.navigate();
-        await loginPage.login(username);
-        await page.waitForURL("/");
-        await loginPage.setLang(englishGerman);
-        await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
-        expect(await dbHelper.getUserLang(username)).toBe("de");
-        await browser.newContext();
-        await page.evaluate(() => localStorage.removeItem('lang'));
-        await loginPage.navigate();
-        await expect(loginPage.heading).toHaveText(englishLoginTitle);
-        await loginPage.login(username);
-        await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
-        // @ts-ignore
-        await browser.contexts().pop().close();
-        await dbHelper.deleteTestUser(username);
-    });
+    test('setting the lang as user is persisted in db and shown on next login',
+        async ({page, dbHelper, loginPage, browser}) => {
+            const username = await dbHelper.addTestUser('en');
+            await loginPage.navigate();
+            await loginPage.login(username);
+            await page.waitForURL("/");
+            await loginPage.setLang(englishGerman);
+            await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
+            expect(await dbHelper.getUserLang(username)).toBe("de");
+            await browser.newContext();
+            await page.evaluate(() => localStorage.removeItem('lang'));
+            await loginPage.navigate();
+            await expect(loginPage.heading).toHaveText(englishLoginTitle);
+            await loginPage.login(username);
+            await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
+            // @ts-ignore
+            await browser.contexts().pop().close();
+            await dbHelper.deleteTestUser(username);
+        });
 });
 
 test.describe("browser lang is german", async () => {
@@ -61,22 +62,23 @@ test.describe("browser lang is german", async () => {
         await dbHelper.deleteTestUser(username);
     });
 
-    test('setting the lang as user is persisted in db and shown on next login', async ({page, dbHelper, loginPage, browser}) => {
-        const username = await dbHelper.addTestUser('de');
-        await loginPage.navigate();
-        await loginPage.login(username);
-        await page.waitForURL("/");
-        await loginPage.setLang(germanEnglish);
-        await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
-        expect(await dbHelper.getUserLang(username)).toBe("en");
-        await browser.newContext();
-        await page.evaluate(() => localStorage.removeItem('lang'));
-        await loginPage.navigate();
-        await expect(loginPage.heading).toHaveText(germanLoginTitle);
-        await loginPage.login(username);
-        await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
-        // @ts-ignore
-        await browser.contexts().pop().close();
-        await dbHelper.deleteTestUser(username);
-    });
+    test('setting the lang as user is persisted in db and shown on next login',
+        async ({page, dbHelper, loginPage, browser}) => {
+            const username = await dbHelper.addTestUser('de');
+            await loginPage.navigate();
+            await loginPage.login(username);
+            await page.waitForURL("/");
+            await loginPage.setLang(germanEnglish);
+            await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
+            expect(await dbHelper.getUserLang(username)).toBe("en");
+            await browser.newContext();
+            await page.evaluate(() => localStorage.removeItem('lang'));
+            await loginPage.navigate();
+            await expect(loginPage.heading).toHaveText(germanLoginTitle);
+            await loginPage.login(username);
+            await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
+            // @ts-ignore
+            await browser.contexts().pop().close();
+            await dbHelper.deleteTestUser(username);
+        });
 });
