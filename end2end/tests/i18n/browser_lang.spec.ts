@@ -3,6 +3,7 @@ import {test} from '../fixtures/i18n'
 
 let english_login_title: string;
 let german_login_title: string;
+
 test.describe("browser lang", () => {
     test.beforeAll(async ({i18nHelper}) => {
         english_login_title = i18nHelper.get("en", "login").toString();
