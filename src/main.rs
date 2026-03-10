@@ -58,7 +58,6 @@ async fn main() -> std::io::Result<()> {
         //LSF CODE END
 
         println!("listening on {}", addr);
-        println!("Database URL: {}", db_url);
 
         App::new()
             //LSF CODE
