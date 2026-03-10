@@ -7,7 +7,7 @@ export class I18n {
     private englishTranslations: Object | undefined;
     private germanTranslations: Object | undefined;
 
-    async init()  {
+    async init() {
         if (!this.englishTranslations) {
             const file = await fs.readFile(this.path + "en.json");
             this.englishTranslations = JSON.parse(file.toString());
@@ -33,7 +33,7 @@ export class I18n {
 }
 
 // noinspection JSVoidFunctionReturnValueUsed
-export const test = base.extend<{}, {i18nHelper: I18n}>({
+export const test = base.extend<{}, { i18nHelper: I18n }>({
     i18nHelper: [
         async ({}, use) => {
             const i18nHelper = new I18n();
