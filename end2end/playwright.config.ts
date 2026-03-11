@@ -19,7 +19,7 @@ export default defineConfig({
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: 10000,
+    timeout: 5000,
   },
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -98,12 +98,12 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
+    command: 'cargo leptos serve',
     cwd: '../',
     env: {
       DATABASE_URL: 'postgres://lsftest:lsftest@localhost:5432/lsf_test',
       LSF_ENV: 'TEST',
     },
-    command: 'cargo leptos serve',
     reuseExistingServer: !process.env.CI,
     url: 'http://localhost:3456',
   },
