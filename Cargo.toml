@@ -20,8 +20,8 @@ leptos_i18n = "0.6.0"
 server_fn = "0.8.8"
 sqlx = { version = "0.8.6", optional = true, features = ["chrono"] }
 serde = { version = "1.0.228", features = ["derive"] }
-bcrypt = "0.18.0"
-getrandom = {version = "0.3.4", features = ["wasm_js"]}
+bcrypt = "0.19.0"
+getrandom = {version = "0.4.2", features = ["wasm_js"]}
 futures-util = "0.3.31"
 log = {version = "0.4.29",optional = true }
 config = { version = "0.15.17",optional = true }
