@@ -7,7 +7,8 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::{read_dir, remove_file, DirEntry, File};
 use std::io::Write;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{OnceLock};
+use tokio::sync::Mutex;
 
 const LOG_ENTRY_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 const LOG_FILE_NAME_DATE_FORMAT: &str = "%Y-%m-%d";
@@ -54,7 +55,7 @@ impl log::Log for Logger {
                 }
                 Err(_) => {
                     println!(
-                        "Couldn't get look on log file for message:\n{} [{}]: ({}) {}",
+                        "Couldn't get lock on log file for message:\n{} [{}]: ({}) {}",
                         now,
                         record.level(),
                         record.target(),
@@ -71,7 +72,8 @@ impl log::Log for Logger {
 impl Logger {
     pub async fn set_new_logfile() {
         let this = LOGGER.get().expect("LOGGER not initialized");
-        let mut file = this.file.lock().expect("Couldn't lock log file");
+        //let mut file = this.file.lock().expect("Couldn't lock log file");
+        let mut file = this.file.try_lock().expect("Couldn't lock log file");
         log!(Level::Info, "Setting new log file to {}", this.path);
         *file = Self::open_file(this.path.clone());
     }
