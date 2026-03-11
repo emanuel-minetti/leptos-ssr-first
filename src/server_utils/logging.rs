@@ -30,17 +30,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            let file = &mut self.file.try_lock().expect("Couldn't lock log file");
             let now = Utc::now().format(LOG_ENTRY_DATE_FORMAT);
-            writeln!(
-                file,
-                "{} [{}]: ({}) {}",
-                now,
-                record.level(),
-                record.target(),
-                record.args()
-            )
-                .expect("Could not write to log file");
             if self.env == "DEV" {
                 println!(
                     "{} [{}]: ({}) {}",
@@ -50,8 +40,28 @@ impl log::Log for Logger {
                     record.args()
                 );
             }
-
-            file.flush().unwrap();
+            match self.file.try_lock() {
+                Ok(mut file) => {
+                    let _ = writeln!(
+                        file,
+                        "{} [{}]: ({}) {}",
+                        now,
+                        record.level(),
+                        record.target(),
+                        record.args()
+                    );
+                    let _ = file.flush();
+                }
+                Err(_) => {
+                    println!(
+                        "Couldn't get look on log file for message:\n{} [{}]: ({}) {}",
+                        now,
+                        record.level(),
+                        record.target(),
+                        record.args()
+                    );
+                }
+            }
         }
     }
 

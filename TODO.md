@@ -1,9 +1,9 @@
-- Add e2e tests
-  - set lang via login
 - Add a page title to the layout
+- Review logging i.e., getting look on file.
 - Make Server Message testable (i.e., make it reloadable)
 - Review mobile window width.
 - Add a CI pipeline (maybe using GitHub actions)
 - Retrieve session on reload from session storage if applicable
+  - Remember to adapt e2e tests to use logout instead of reloading 
 - Add modal to warn if login expires
 - Optional: Get client configuration from the server

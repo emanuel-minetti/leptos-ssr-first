@@ -9,6 +9,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea/httpRequests" />
       <excludeFolder url="file://$MODULE_DIR$/end2end/playwright-report" />
       <excludeFolder url="file://$MODULE_DIR$/end2end/test-results" />
+      <excludeFolder url="file://$MODULE_DIR$/log_test" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

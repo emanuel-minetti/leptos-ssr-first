@@ -10,7 +10,7 @@ pub fn HomePage() -> impl IntoView {
     let lang = use_context::<ReadSignal<String>>().expect("no lang specified in context");
     let i18n = use_i18n();
     div().class("container").child((
-        { h1().child("Hello Emu! Welcome to the Home Page!") },
+        { h1().child(t![i18n, homePageTitle]) },
         { t![i18n, preferred] },
         { ": " },
         { move || lang.get().to_string() },
