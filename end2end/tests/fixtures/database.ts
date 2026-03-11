@@ -5,6 +5,15 @@ import * as fs from "node:fs/promises";
 interface DbConfig { username: string; password: string; host: string; database_name: string; port: number; }
 interface TestConfig { database: DbConfig; }
 
+// Keep in sync with TestConfig and DbConfig interfaces above
+function isTestConfig(obj: any): obj is TestConfig {
+    return typeof obj?.database?.username === 'string'
+        && typeof obj?.database?.password === 'string'
+        && typeof obj?.database?.host === 'string'
+        && typeof obj?.database?.database_name === 'string'
+        && typeof obj?.database?.port === 'number';
+}
+
 class DatabaseHelper {
     private client: Client | undefined;
     private readonly workerId: number;
@@ -16,7 +25,9 @@ class DatabaseHelper {
 
     async connect() {
         const configFile = await fs.readFile('../config/configuration.test.json');
-        const config: TestConfig = JSON.parse(configFile.toString());
+        const raw = JSON.parse(configFile.toString());
+        if (!isTestConfig(raw)) throw new Error("Invalid configuration file structure");
+        const config: TestConfig = raw;
         const dbConfig: DbConfig = config.database;
         this.client = new Client({
             user: dbConfig.username,
