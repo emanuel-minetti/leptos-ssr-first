@@ -2,8 +2,17 @@ import {test as base} from '@playwright/test';
 import {Client} from 'pg'
 import * as fs from "node:fs/promises";
 
-interface DbConfig { username: string; password: string; host: string; database_name: string; port: number; }
-interface TestConfig { database: DbConfig; }
+interface DbConfig {
+    username: string;
+    password: string;
+    host: string;
+    database_name: string;
+    port: number;
+}
+
+interface TestConfig {
+    database: DbConfig;
+}
 
 // Keep in sync with TestConfig and DbConfig interfaces above
 function isTestConfig(obj: any): obj is TestConfig {
