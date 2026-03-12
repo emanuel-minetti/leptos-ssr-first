@@ -3,6 +3,7 @@
 - Make Server Message testable (i.e., make it reloadable)
 - Review mobile window width.
 - Add a CI pipeline (maybe using GitHub actions)
+  - Add apache as a reverse proxy to all environments (dev, test, prod)
 - Retrieve session on reload from session storage if applicable
   - Remember to adapt e2e tests to use logout instead of reloading 
 - Add modal to warn if login expires
