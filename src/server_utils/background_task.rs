@@ -65,15 +65,15 @@ pub async fn setup_scheduler(
     })?;
     scheduler.add(logfile_cleanup_job).await?;
 
-    // use a new logfile
-    // run one second after one minute after midnight
-    let new_logfile_cron_string = "1 1 0 * * * *";
-    let new_logfile_job = Job::new_async(new_logfile_cron_string, move |_uuid, _l| {
-        Box::pin(async move {
-            Logger::set_new_logfile().await;
-        })
-    })?;
-    scheduler.add(new_logfile_job).await?;
+    // // use a new logfile
+    // // run one second after one minute after midnight
+    // let new_logfile_cron_string = "1 1 0 * * * *";
+    // let new_logfile_job = Job::new_async(new_logfile_cron_string, move |_uuid, _l| {
+    //     Box::pin(async move {
+    //         Logger::set_new_logfile().await;
+    //     })
+    // })?;
+    // scheduler.add(new_logfile_job).await?;
 
     Ok(scheduler)
 }
