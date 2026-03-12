@@ -244,7 +244,7 @@ impl Logger {
         let path = settings.path_string.clone();
         let (log_sender, log_receiver) = mpsc::channel(100);
         let _ = tokio::task::spawn(async move {
-            let _ = Self::logging_task(log_receiver, path);
+            Self::logging_task(log_receiver, path).await;
         });
         Self::delete_outdated_log_files(&settings, true).await;
 
