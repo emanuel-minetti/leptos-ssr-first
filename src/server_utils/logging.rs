@@ -48,7 +48,7 @@ impl log::Log for Logger {
                 Ok(_) => {},
                 Err(e) => {
                     println!(
-                        "{}: {} [{}]: ({}) {}",
+                        "Unlogged error: {}: {} [{}]: ({}) {}",
                         e,
                         now,
                         record.level(),
