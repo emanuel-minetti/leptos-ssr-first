@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::{read_dir, remove_file, DirEntry, File};
 use std::io::Write;
-use std::sync::{OnceLock};
-use tokio::sync::{mpsc};
+use std::sync::OnceLock;
+use tokio::sync::mpsc;
 use tokio::sync::mpsc::Receiver;
 
 const LOG_ENTRY_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
@@ -50,7 +50,7 @@ impl log::Log for Logger {
             }
             // let _ = self.sender.send(message);
             match self.sender.try_send(LogTaskMessage::Write(message)) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     println!(
                         "Unlogged error: {}: {} [{}]: ({}) {}",
@@ -60,8 +60,7 @@ impl log::Log for Logger {
                         record.target(),
                         record.args()
                     );
-                },
-
+                }
             };
         }
     }
@@ -253,7 +252,7 @@ impl Logger {
         let _ = tokio::task::spawn(async move {
             logger.logging_task(log_receiver).await;
         });
-        
+
         logger
     }
 
