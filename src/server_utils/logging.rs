@@ -16,10 +16,15 @@ const LOG_FILE_NAME_DATE_FORMAT: &str = "%Y-%m-%d";
 const LOG_FILE_REGEX: &str = r"^log-(\d{4})-(\d{2})-(\d{2})\.txt$";
 const LOG_FILE_FORMAT: &str = "log-{}.txt";
 
+enum LogTaskMessage {
+    Write(String),
+    Rotate,
+}
+
 pub struct Logger {
     level: Level,
-    //path: String,
-    sender: mpsc::Sender<String>,
+    path: String,
+    sender: mpsc::Sender<LogTaskMessage>,
     env: String,
 }
 
@@ -44,7 +49,7 @@ impl log::Log for Logger {
                 );
             }
             // let _ = self.sender.send(message);
-            match self.sender.try_send(message) {
+            match self.sender.try_send(LogTaskMessage::Write(message)) {
                 Ok(_) => {},
                 Err(e) => {
                     println!(
@@ -65,13 +70,10 @@ impl log::Log for Logger {
 }
 
 impl Logger {
-    // pub async fn set_new_logfile() {
-    //     let this = LOGGER.get().expect("LOGGER not initialized");
-    //     //let mut file = this.file.lock().expect("Couldn't lock log file");
-    //     let mut file = this.file.try_lock().expect("Couldn't lock log file");
-    //     log!(Level::Info, "Setting new log file to {}", this.path);
-    //     *file = Self::open_file(this.path.clone());
-    // }
+    pub async fn set_new_logfile() {
+        let this = LOGGER.get().expect("LOGGER not initialized");
+        let _ = this.sender.send(LogTaskMessage::Rotate);
+    }
 
     pub async fn delete_outdated_log_files(settings: &LogSettings, running_on_startup: bool) {
         let log_file_reg_ex = Regex::new(LOG_FILE_REGEX).unwrap();
@@ -240,49 +242,54 @@ impl Logger {
     }
 
     async fn new(settings: LogSettings) -> &'static Self {
-        //let file = Self::open_file(settings.path_string.clone());
-        let path = settings.path_string.clone();
         let (log_sender, log_receiver) = mpsc::channel(100);
-        let _ = tokio::task::spawn(async move {
-            Self::logging_task(log_receiver, path).await;
-        });
         Self::delete_outdated_log_files(&settings, true).await;
-
-        LOGGER.get_or_init(|| Logger {
+        let logger = LOGGER.get_or_init(|| Logger {
             level: settings.max_level,
-            //path: settings.path_string,
+            path: settings.path_string,
             sender: log_sender,
             env: env::var("LSF_ENV").unwrap_or_else(|_| "DEV".to_string()),
-        })
+        });
+        let _ = tokio::task::spawn(async move {
+            logger.logging_task(log_receiver).await;
+        });
+        
+        logger
     }
 
-    fn open_file(path: String) -> File {
-        let file_path = Self::new_filename(path);
-        let file = File::options()
+    fn open_file(&self) -> File {
+        let file_path = self.new_filename();
+
+        File::options()
             .append(true)
             .create(true)
             .open(file_path)
-            .expect("Unable to open log file");
-
-        file
+            .expect("Unable to open log file")
     }
 
-    fn new_filename(path: String) -> String {
+    fn new_filename(&self) -> String {
         let today = Utc::now();
         let today_string = today.format(LOG_FILE_NAME_DATE_FORMAT);
         let file_name = LOG_FILE_FORMAT
             .to_string()
             .replace("{}", today_string.to_string().as_str());
 
-        path.clone() + file_name.as_str()
+        self.path.clone() + file_name.as_str()
     }
 
-    async fn logging_task(mut receiver: Receiver<String>, path: String) {
-        println!("Logging to {}", path);
-        let mut file = Self::open_file(path);
+    async fn logging_task(&self, mut receiver: Receiver<LogTaskMessage>) {
+        println!("Logging to {}", self.path);
+        let mut file = self.open_file();
         while let Some(message) = receiver.recv().await {
-            let _ = writeln!(file, "{}", message);
-            let _ = file.flush();
+            match message {
+                LogTaskMessage::Write(msg) => {
+                    let _ = writeln!(file, "{}", msg);
+                    let _ = file.flush();
+                }
+                LogTaskMessage::Rotate => {
+                    file = self.open_file();
+                }
+            }
         }
     }
 }
