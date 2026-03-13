@@ -1,5 +1,5 @@
-- Add a page title to the layout
-- Review logging i.e., getting look on file.
+- Add a breadcrumb to the layout
+- Review logging i.e., getting lock on file.
 - Make Server Message testable (i.e., make it reloadable)
 - Review mobile window width.
 - Add a CI pipeline (maybe using GitHub actions)
