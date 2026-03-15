@@ -1,5 +1,5 @@
 import {test as base} from '@playwright/test';
-import {Client} from 'pg'
+import {Pool} from 'pg'
 import * as fs from "node:fs/promises";
 
 interface DbConfig {
@@ -24,7 +24,8 @@ function isTestConfig(obj: any): obj is TestConfig {
 }
 
 class DatabaseHelper {
-    private client: Client | undefined;
+    //private client: Client | undefined;
+    private pool: Pool | undefined;
     private readonly workerId: number;
 
     constructor(id: number) {
@@ -38,21 +39,21 @@ class DatabaseHelper {
         if (!isTestConfig(raw)) throw new Error("Invalid configuration file structure");
         const config: TestConfig = raw;
         const dbConfig: DbConfig = config.database;
-        this.client = new Client({
+        this.pool = new Pool({
             user: dbConfig.username,
             password: dbConfig.password,
             host: dbConfig.host,
             database: dbConfig.database_name,
             port: dbConfig.port,
         });
-        await this.client.connect();
+        await this.pool.connect();
     }
 
     private async query(sql: string, params: any[] = []) {
-        if (!this.client) {
+        if (!this.pool) {
             throw new Error("Call connect() before using the client.");
         }
-        return await this.client.query(sql, params);
+        return await this.pool.query(sql, params);
     }
 
     async addTestUser(lang: string) {
@@ -80,12 +81,6 @@ class DatabaseHelper {
         const query = "DELETE FROM account WHERE username = $1";
         await this.query(query, [username]);
     }
-
-    async disconnect() {
-        if (this.client) {
-            await this.client.end();
-        }
-    }
 }
 
 // noinspection JSVoidFunctionReturnValueUsed
@@ -95,6 +90,5 @@ export const test = base.extend<{}, { dbHelper: DatabaseHelper; }>({
             const dbHelper = new DatabaseHelper(workerInfo.workerIndex);
             await dbHelper.connect();
             await use(dbHelper);
-            await dbHelper.disconnect();
         }, {scope: 'worker'}],
 });

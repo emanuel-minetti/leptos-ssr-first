@@ -38,6 +38,7 @@ test.describe("browser lang is english", async () => {
             await page.waitForURL("/");
             await loginPage.setLang(englishGerman);
             await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
+            await page.waitForTimeout(500);
             expect(await dbHelper.getUserLang(username)).toBe("de");
             await browser.newContext();
             await page.evaluate(() => localStorage.removeItem('lang'));
@@ -70,7 +71,6 @@ test.describe("browser lang is german", async () => {
             await page.waitForURL("/");
             await loginPage.setLang(germanEnglish);
             await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
-            // The problem is not in the test but in server-side `set_lang`
             expect(await dbHelper.getUserLang(username)).toBe("en");
             await browser.newContext();
             await page.evaluate(() => localStorage.removeItem('lang'));
