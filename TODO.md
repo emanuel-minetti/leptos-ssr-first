@@ -1,5 +1,4 @@
 - Add a breadcrumb to the layout
-- Review logging i.e., getting lock on file.
 - Review `set_lang` server fn.
     (See: `The problem is not in the test but in server-side 'set_lang'`
     in `end2end/tests/i18n/user_lang.spec.ts`.)
