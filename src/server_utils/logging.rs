@@ -48,7 +48,6 @@ impl log::Log for Logger {
                     record.args()
                 );
             }
-            // let _ = self.sender.send(message);
             match self.sender.try_send(LogTaskMessage::Write(message)) {
                 Ok(_) => {}
                 Err(e) => {
