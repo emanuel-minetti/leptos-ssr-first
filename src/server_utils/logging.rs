@@ -12,8 +12,8 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::Receiver;
 
 const LOG_ENTRY_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
-const LOG_FILE_NAME_DATE_FORMAT: &str = "%Y-%m-%d";
-const LOG_FILE_REGEX: &str = r"^log-(\d{4})-(\d{2})-(\d{2})\.txt$";
+const LOG_FILE_NAME_DATE_FORMAT: &str = "%d-%m-%Y";
+const LOG_FILE_REGEX: &str = r"^log-(\d{2})-(\d{2})-(\d{4})\.txt$";
 const LOG_FILE_FORMAT: &str = "log-{}.txt";
 
 enum LogTaskMessage {
@@ -38,7 +38,7 @@ impl log::Log for Logger {
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
             let now = Utc::now().format(LOG_ENTRY_DATE_FORMAT);
-            let message = format!("[{}] {}", now, record.args());
+            let message = format!("[{}] [{}] {}", now, record.level(), record.args());
             if self.env == "DEV" {
                 println!(
                     "{} [{}]: ({}) {}",
@@ -71,7 +71,13 @@ impl log::Log for Logger {
 impl Logger {
     pub async fn set_new_logfile() {
         let this = LOGGER.get().expect("LOGGER not initialized");
-        let _ = this.sender.send(LogTaskMessage::Rotate);
+        log!(Level::Info, "Rotating log file to: {}", this.new_filename());
+        match this.sender.try_send(LogTaskMessage::Rotate) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Could not send Rotate message: {}", e);
+            }
+        };
     }
 
     pub async fn delete_outdated_log_files(settings: &LogSettings, running_on_startup: bool) {
@@ -104,7 +110,33 @@ impl Logger {
             if log_file_reg_ex.is_match(file_name.as_str()) {
                 // this `unwrap` is approved because we know we have a match
                 let capture = log_file_reg_ex.captures(file_name.as_str()).unwrap();
-                let year = match capture.get(1).unwrap().as_str().parse::<i32>() {
+                let day = match capture.get(1).unwrap().as_str().parse::<u32>() {
+                    Ok(x) => x,
+                    Err(_) => {
+                        if !running_on_startup {
+                            log!(Level::Error, "Couldn't parse day in log file {}", file_name);
+                        } else {
+                            println!("Error: Couldn't parse day in log file {}", file_name);
+                        }
+                        return;
+                    }
+                };
+                let month = match capture.get(2).unwrap().as_str().parse::<u32>() {
+                    Ok(x) => x,
+                    Err(_) => {
+                        if !running_on_startup {
+                            log!(
+                                Level::Error,
+                                "Couldn't parse month in log file {}",
+                                file_name
+                            );
+                        } else {
+                            println!("Error: Couldn't parse month in log file {}", file_name);
+                        }
+                        return;
+                    }
+                };
+                let year = match capture.get(3).unwrap().as_str().parse::<i32>() {
                     Ok(x) => {
                         if x > 2000 && x < 3000 {
                             x
@@ -133,32 +165,6 @@ impl Logger {
                             );
                         } else {
                             println!("Error: Couldn't parse year in log file {}", file_name);
-                        }
-                        return;
-                    }
-                };
-                let month = match capture.get(2).unwrap().as_str().parse::<u32>() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        if !running_on_startup {
-                            log!(
-                                Level::Error,
-                                "Couldn't parse month in log file {}",
-                                file_name
-                            );
-                        } else {
-                            println!("Error: Couldn't parse month in log file {}", file_name);
-                        }
-                        return;
-                    }
-                };
-                let day = match capture.get(3).unwrap().as_str().parse::<u32>() {
-                    Ok(x) => x,
-                    Err(_) => {
-                        if !running_on_startup {
-                            log!(Level::Error, "Couldn't parse day in log file {}", file_name);
-                        } else {
-                            println!("Error: Couldn't parse day in log file {}", file_name);
                         }
                         return;
                     }
@@ -287,6 +293,7 @@ impl Logger {
                 }
                 LogTaskMessage::Rotate => {
                     file = self.open_file();
+                    log!(Level::Info, "Rotated file.");
                 }
             }
         }
