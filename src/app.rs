@@ -61,7 +61,7 @@ pub fn App() -> impl IntoView {
 
     // initializing the global value lang needed by non-login pages
     // here the SSR lang is set, so for the reactiveness of the server message, it shouldn't match
-    // an existing lang
+    // any existing lang
     let (lang, set_lang) = signal("".to_string());
 
     let browser_lang = move || get_lang_from_browser();
