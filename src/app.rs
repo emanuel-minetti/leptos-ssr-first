@@ -127,25 +127,28 @@ pub fn App() -> impl IntoView {
                                     .children(ToChildren::to_children(move || {
                                         (
                                             {
+                                                let path = crate::model::route::Routes::get_by_name("imprint").path;
                                                 Route(
                                                     RouteProps::builder()
-                                                        .path(StaticSegment("/imprint"))
+                                                        .path(StaticSegment(path))
                                                         .view(Imprint)
                                                         .build(),
                                                 )
                                             },
                                             {
+                                                let path = crate::model::route::Routes::get_by_name("privacy").path;
                                                 Route(
                                                     RouteProps::builder()
-                                                        .path(StaticSegment("/privacy"))
+                                                        .path(StaticSegment(path))
                                                         .view(Privacy)
                                                         .build(),
                                                 )
                                             },
                                             {
+                                                let path = crate::model::route::Routes::get_by_name("login").path;
                                                 Route(
                                                     RouteProps::builder()
-                                                        .path(StaticSegment("/login"))
+                                                        .path(StaticSegment(path))
                                                         .view(move || {
                                                             Login(
                                                                 LoginProps::builder()
@@ -158,9 +161,10 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
+                                                let path = crate::model::route::Routes::get_by_name("home").path;
                                                 ProtectedRoute(
                                                     ProtectedRouteProps::builder()
-                                                        .path(StaticSegment(""))
+                                                        .path(StaticSegment(path))
                                                         .view(HomePage)
                                                         .redirect_path(move || "/login?orig_url=/")
                                                         .condition(move || is_logged_in())
