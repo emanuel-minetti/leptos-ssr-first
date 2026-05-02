@@ -71,6 +71,7 @@ test.describe("browser lang is german", async () => {
             await page.waitForURL("/");
             await loginPage.setLang(germanEnglish);
             await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
+            await page.waitForTimeout(1500);
             expect(await dbHelper.getUserLang(username)).toBe("en");
             await browser.newContext();
             await page.evaluate(() => localStorage.removeItem('lang'));

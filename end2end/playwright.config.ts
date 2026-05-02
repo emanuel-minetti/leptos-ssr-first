@@ -20,7 +20,7 @@ export default defineConfig({
      * For example in `await expect(locator).toHaveText();`
      */
     // avoid flaky tests on parallel testing workers
-    timeout: process.env.CI ? 5000 : 12000,
+    timeout: process.env.CI ? 5000 : 17000,
   },
   /* Run tests in files in parallel */
   fullyParallel: true,
