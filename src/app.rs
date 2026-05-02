@@ -107,7 +107,6 @@ pub fn App() -> impl IntoView {
         Stylesheet(
             StylesheetProps::builder()
                 .href("/pkg/leptos-ssr-first.css")
-                .id("leptos")
                 .build(),
         ),
         Title(TitleProps::builder().text("Leptos SSR First").build()),
