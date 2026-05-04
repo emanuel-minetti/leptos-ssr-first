@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct Route {
     pub path: &'static str,
     pub i18n_key: &'static str,

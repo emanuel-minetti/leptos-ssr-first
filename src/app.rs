@@ -2,6 +2,7 @@ use crate::i18n::{use_i18n, Locale};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::layout::server_message::ServerMessage;
+use crate::model::route::Route;
 use crate::model::user::User;
 use crate::pages::home_page::HomePage;
 use crate::pages::imprint::Imprint;
@@ -23,28 +24,7 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
-
-pub fn shell(options: LeptosOptions) -> impl IntoView {
-    View::new((
-        doctype("html"),
-        html().lang("en").child((
-            head().child((
-                InertElement::new("<meta charset=\"utf-8\" />"),
-                InertElement::new(
-                    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
-                ),
-                AutoReload(AutoReloadProps::builder().options(options.clone()).build()),
-                HydrationScripts(
-                    HydrationScriptsProps::builder()
-                        .options(options.clone())
-                        .build(),
-                ),
-                MetaTags(),
-            )),
-            body().child(App()),
-        )),
-    ))
-}
+use crate::layout::breadcrumbs::{Breadcrumbs, BreadcrumbsProps};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -93,6 +73,10 @@ pub fn App() -> impl IntoView {
     let (user, set_user) = signal(None::<User>);
     provide_context(user);
 
+    // initializing breadcrumbs
+    let (breadcrumbs, set_breadcrumbs) = signal::<Vec<Route>>(vec![]);
+    provide_context(set_breadcrumbs);
+
     // the guard for protected routes
     let is_logged_in = move || {
         if user.get().is_some() {
@@ -107,6 +91,7 @@ pub fn App() -> impl IntoView {
         Stylesheet(
             StylesheetProps::builder()
                 .href("/pkg/leptos-ssr-first.css")
+                .id("leptos")
                 .build(),
         ),
         Title(TitleProps::builder().text("Leptos SSR First").build()),
@@ -119,6 +104,7 @@ pub fn App() -> impl IntoView {
                                 .child(NavBar(NavBarProps::builder().lang_setter(set_lang).build()))
                         },
                         { ServerMessage },
+                        { Breadcrumbs(BreadcrumbsProps::builder().crumbs(breadcrumbs).build()) },
                         {
                             main().child(Routes(
                                 RoutesProps::builder()
@@ -126,7 +112,11 @@ pub fn App() -> impl IntoView {
                                     .children(ToChildren::to_children(move || {
                                         (
                                             {
-                                                let path = crate::model::route::Routes::get_by_name("imprint").path;
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "imprint",
+                                                    )
+                                                    .path;
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -135,7 +125,11 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
-                                                let path = crate::model::route::Routes::get_by_name("privacy").path;
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "privacy",
+                                                    )
+                                                    .path;
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -144,7 +138,11 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
-                                                let path = crate::model::route::Routes::get_by_name("login").path;
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "login",
+                                                    )
+                                                    .path;
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -160,7 +158,11 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
-                                                let path = crate::model::route::Routes::get_by_name("home").path;
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "home",
+                                                    )
+                                                    .path;
                                                 ProtectedRoute(
                                                     ProtectedRouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -195,5 +197,27 @@ pub fn App() -> impl IntoView {
                 }))
                 .build(),
         ),
+    ))
+}
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    View::new((
+        doctype("html"),
+        html().lang("en").child((
+            head().child((
+                InertElement::new("<meta charset=\"utf-8\" />"),
+                InertElement::new(
+                    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
+                ),
+                AutoReload(AutoReloadProps::builder().options(options.clone()).build()),
+                HydrationScripts(
+                    HydrationScriptsProps::builder()
+                        .options(options.clone())
+                        .build(),
+                ),
+                MetaTags(),
+            )),
+            body().child(App()),
+        )),
     ))
 }
