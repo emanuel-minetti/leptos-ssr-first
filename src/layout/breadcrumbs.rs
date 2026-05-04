@@ -7,6 +7,7 @@ pub fn Breadcrumbs(crumbs: ReadSignal<Vec<Route>>) -> impl IntoView {
     let crumbs_vector = move || {
         let crumbs = crumbs.get();
         crumbs.iter().enumerate().map(|(i, crumb)| {
+            //The problem strokes here
             let mut li = li().class("breadcrumb-item").child(crumb.i18n_key);
             if i == crumbs.len() - 1 {
                 li = li.class("active").aria_current("page");
