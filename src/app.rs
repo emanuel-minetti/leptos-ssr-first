@@ -116,7 +116,7 @@ pub fn App() -> impl IntoView {
                                                     crate::model::route::Routes::get_by_name(
                                                         "imprint",
                                                     )
-                                                    .path;
+                                                    .href;
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -129,7 +129,7 @@ pub fn App() -> impl IntoView {
                                                     crate::model::route::Routes::get_by_name(
                                                         "privacy",
                                                     )
-                                                    .path;
+                                                    .href;
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -142,7 +142,7 @@ pub fn App() -> impl IntoView {
                                                     crate::model::route::Routes::get_by_name(
                                                         "login",
                                                     )
-                                                    .path;
+                                                    .href;
                                                 Route(
                                                     RouteProps::builder()
                                                         .path(StaticSegment(path))
@@ -162,7 +162,7 @@ pub fn App() -> impl IntoView {
                                                     crate::model::route::Routes::get_by_name(
                                                         "home",
                                                     )
-                                                    .path;
+                                                    .href;
                                                 ProtectedRoute(
                                                     ProtectedRouteProps::builder()
                                                         .path(StaticSegment(path))

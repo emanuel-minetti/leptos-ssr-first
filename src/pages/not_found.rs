@@ -1,6 +1,7 @@
 use leptos::{component, IntoView};
 use leptos::html::{h1, ElementChild};
-
+use leptos_i18n::t;
+use crate::i18n::use_i18n;
 
 #[component]
 pub fn NotFound() -> impl IntoView {
@@ -18,6 +19,7 @@ pub fn NotFound() -> impl IntoView {
         let resp = expect_context::<leptos_actix::ResponseOptions>();
         resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
     }
+    let i18n = use_i18n();
 
-    h1().child("Not Found")
+    h1().child(t!(i18n, notFound))
 }

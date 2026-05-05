@@ -1,7 +1,11 @@
+use crate::i18n::Locale;
+use leptos::prelude::{AnyView, IntoAny};
+use leptos_i18n::{t, I18nContext};
+
 #[derive(Clone)]
 pub struct Route {
-    pub path: &'static str,
-    pub i18n_key: &'static str,
+    pub href: &'static str,
+    pub label: fn(I18nContext<Locale>) -> AnyView,
 }
 
 pub struct Routes {
@@ -14,24 +18,24 @@ pub struct Routes {
 
 static ROUTES: Routes = Routes {
     imprint: Route {
-        path: "/imprint",
-        i18n_key: "imprint",
+        href: "/imprint",
+        label: |i18n| t!(i18n, imprint).into_any(),
     },
     privacy: Route {
-        path: "/privacy",
-        i18n_key: "privacy",
+        href: "/privacy",
+        label: |i18n| t!(i18n, privacy).into_any(),
     },
     home: Route {
-        path: "/",
-        i18n_key: "homePageTitle",
+        href: "/",
+        label: |i18n| t!(i18n, homePageTitle).into_any(),
     },
     login: Route {
-        path: "/login",
-        i18n_key: "login",
+        href: "/login",
+        label: |i18n| t!(i18n, login).into_any(),
     },
     not_found: Route {
-        path: "",  // should not be used
-        i18n_key: "not_found",
+        href: "",  // should not be used
+        label: |i18n| t!(i18n, notFound).into_any(),
     },
 };
 

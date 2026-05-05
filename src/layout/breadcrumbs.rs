@@ -1,18 +1,27 @@
 use leptos::html::{li, nav, ol};
 use leptos::prelude::*;
+use crate::i18n::use_i18n;
 use crate::model::route::Route;
 
 #[component]
 pub fn Breadcrumbs(crumbs: ReadSignal<Vec<Route>>) -> impl IntoView {
+    let i18n = use_i18n();
     let crumbs_vector = move || {
         let crumbs = crumbs.get();
+        let len = crumbs.len();
         crumbs.iter().enumerate().map(|(i, crumb)| {
-            //The problem strokes here
-            let mut li = li().class("breadcrumb-item").child(crumb.i18n_key);
-            if i == crumbs.len() - 1 {
-                li = li.class("active").aria_current("page");
+            let label = (crumb.label)(i18n);
+            let is_last = i + 1 == len;
+            if is_last {
+                li().class("breadcrumb-item active")
+                    .attr("aria-current", "page")
+                    .child(label)
+                    .into_any()
+            } else {
+                li().class("breadcrumb-item")
+                    .child(label)
+                    .into_any()
             }
-            li.into_any()
         }).collect::<Vec<_>>()
     };
 
