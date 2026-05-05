@@ -1,7 +1,9 @@
-use leptos::html::{li, nav, ol};
+use leptos::html::{a, li, nav, ol};
 use leptos::prelude::*;
 use crate::i18n::use_i18n;
 use crate::model::route::Route;
+
+pub type Breadcrumbs = Vec<Route>;
 
 #[component]
 pub fn Breadcrumbs(crumbs: ReadSignal<Vec<Route>>) -> impl IntoView {
@@ -19,7 +21,7 @@ pub fn Breadcrumbs(crumbs: ReadSignal<Vec<Route>>) -> impl IntoView {
                     .into_any()
             } else {
                 li().class("breadcrumb-item")
-                    .child(label)
+                    .child(a().attr("href", crumb.href).child(label))
                     .into_any()
             }
         }).collect::<Vec<_>>()

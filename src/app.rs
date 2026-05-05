@@ -2,7 +2,6 @@ use crate::i18n::{use_i18n, Locale};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::layout::server_message::ServerMessage;
-use crate::model::route::Route;
 use crate::model::user::User;
 use crate::pages::home_page::HomePage;
 use crate::pages::imprint::Imprint;
@@ -74,7 +73,7 @@ pub fn App() -> impl IntoView {
     provide_context(user);
 
     // initializing breadcrumbs
-    let (breadcrumbs, set_breadcrumbs) = signal::<Vec<Route>>(vec![]);
+    let (breadcrumbs, set_breadcrumbs) = signal::<Breadcrumbs>(vec![]);
     provide_context(set_breadcrumbs);
 
     // the guard for protected routes
