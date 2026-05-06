@@ -16,6 +16,8 @@ use leptos_router::NavigateOptions;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlFormElement, SubmitEvent};
+use crate::layout::breadcrumbs::Breadcrumbs;
+use crate::model::route::Routes;
 
 const USERNAME_MAX_LENGTH: u8 = 20;
 const PASSWORD_MAX_LENGTH: u8 = 32;
@@ -60,6 +62,9 @@ pub fn Login(
     lang_setter: WriteSignal<String>,
 ) -> impl IntoView {
     let i18n = use_i18n();
+    let route = Routes::get_by_name("login");
+    let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
+    set_crumbs.set(vec![route.clone()]);
     let login = ServerAction::<Login>::new();
     let lang = get_lang();
     let orig_url = use_query_map()
@@ -175,7 +180,7 @@ pub fn Login(
 
     div()
         .class("container")
-        .child(({ h1().child(t![i18n, login]) }, {
+        .child(({ h1().child((route.label)(i18n)) }, {
             ActionForm(
                 ActionFormProps::builder()
                     .action(login)

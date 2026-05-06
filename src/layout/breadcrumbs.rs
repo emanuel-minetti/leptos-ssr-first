@@ -1,7 +1,7 @@
-use leptos::html::{a, li, nav, ol};
-use leptos::prelude::*;
 use crate::i18n::use_i18n;
 use crate::model::route::Route;
+use leptos::html::{a, li, nav, ol};
+use leptos::prelude::*;
 
 pub type Breadcrumbs = Vec<Route>;
 
@@ -11,21 +11,28 @@ pub fn Breadcrumbs(crumbs: ReadSignal<Vec<Route>>) -> impl IntoView {
     let crumbs_vector = move || {
         let crumbs = crumbs.get();
         let len = crumbs.len();
-        crumbs.iter().enumerate().map(|(i, crumb)| {
-            let label = (crumb.label)(i18n);
-            let is_last = i + 1 == len;
-            if is_last {
-                li().class("breadcrumb-item active")
-                    .attr("aria-current", "page")
-                    .child(label)
-                    .into_any()
-            } else {
-                li().class("breadcrumb-item")
-                    .child(a().attr("href", crumb.href).child(label))
-                    .into_any()
-            }
-        }).collect::<Vec<_>>()
+        crumbs
+            .iter()
+            .enumerate()
+            .map(|(i, crumb)| {
+                let label = (crumb.label)(i18n);
+                let is_last = i + 1 == len;
+                if is_last {
+                    li().class("breadcrumb-item active")
+                        .attr("aria-current", "page")
+                        .child(label)
+                        .into_any()
+                } else {
+                    li().class("breadcrumb-item")
+                        .child(a().attr("href", crumb.href).child(label))
+                        .into_any()
+                }
+            })
+            .collect::<Vec<_>>()
     };
 
-    nav().aria_label("breadcrumb").child(ol().class("breadcrumb").child(crumbs_vector))
+    nav()
+        .aria_label("breadcrumb")
+        .class("container-fluid")
+        .child(ol().class("breadcrumb").child(crumbs_vector))
 }
