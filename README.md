@@ -15,7 +15,7 @@ Bootstrap is used for styling.
 
 # Installation and Running
 
-- Install `nodejs`
+- Install `nodejs` and `npm`
 - Run `npm install`
 - Install `rustup`
 - Run `rustup target add wasm32-unknown-unknown`
@@ -25,6 +25,7 @@ Bootstrap is used for styling.
 - Install `sqlx-cli` and `cargo-make` via cargo
 - Install `postgresql` and `postgresql-client` via apt
 - Create a user and database in Postgresql. (Make sure the app can connect to it.)
+- Copy `.env.dist` to `.env` and adjust accordingly.
 - Run `sqlx database setup`.
 - Copy `config/configuration.json.dist` to `config/configuration.json` and adjust accordingly.
 - Copy `config/message_of_the_day.json.dist` to `config/message_of_the_day.json` and adjust accordingly.
