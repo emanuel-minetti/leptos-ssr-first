@@ -43,6 +43,7 @@ class LoginPage {
 
     async expectInvalidCredentialsError() {
         const text = this.i18nHelper.get(this.lang, "invalidCredentials")
+        // Flaky
         await expect(this.page.getByText(text)).toBeVisible();
         await expect(this.page).toHaveURL(LOGIN_URL_PATTERN);
     }

@@ -26,6 +26,7 @@ test.describe("browser lang is english", async () => {
         await loginPage.navigate();
         await expect(loginPage.heading).toHaveText(englishLoginTitle);
         await loginPage.login(username);
+        // Flaky
         await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
         await dbHelper.deleteTestUser(username);
     });
@@ -38,13 +39,16 @@ test.describe("browser lang is english", async () => {
             await page.waitForURL("/");
             await loginPage.setLang(englishGerman);
             await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
-            await page.waitForTimeout(500);
-            expect(await dbHelper.getUserLang(username)).toBe("de");
+            // await page.waitForTimeout(500);
+            // expect(await dbHelper.getUserLang(username)).toBe("de");
+            await expect.poll(async () => dbHelper.getUserLang(username), { timeout: 10000 })
+                .toBe("de");
             await browser.newContext();
             await page.evaluate(() => localStorage.removeItem('lang'));
             await loginPage.navigate();
             await expect(loginPage.heading).toHaveText(englishLoginTitle);
             await loginPage.login(username);
+            // Flaky
             await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
             // @ts-ignore
             await browser.contexts().pop().close();
@@ -57,6 +61,7 @@ test.describe("browser lang is german", async () => {
     test('user lang is english', async ({page, dbHelper, loginPage}) => {
         const username = await dbHelper.addTestUser('en');
         await loginPage.navigate();
+        // Flaky
         await expect(loginPage.heading).toHaveText(germanLoginTitle);
         await loginPage.login(username);
         await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
@@ -71,8 +76,8 @@ test.describe("browser lang is german", async () => {
             await page.waitForURL("/");
             await loginPage.setLang(germanEnglish);
             await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);
-            await page.waitForTimeout(1900);
-            expect(await dbHelper.getUserLang(username)).toBe("en");
+            await expect.poll(async () => dbHelper.getUserLang(username), { timeout: 10000 })
+                .toBe("en");
             await browser.newContext();
             await page.evaluate(() => localStorage.removeItem('lang'));
             await loginPage.navigate();

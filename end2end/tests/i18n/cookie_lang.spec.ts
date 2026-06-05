@@ -33,7 +33,9 @@ test.describe('browser lang is english', () => {
 
     test("selected lang is used and preserved", async () => {
         await langSelect.selectOption(englishGerman);
+        // Flaky
         await expect(langSelect.locator('option[selected]')).toHaveText(germanGerman);
+        // Flaky
         await expect(heading).toHaveText(germanLogin);
 
         await page.reload();
