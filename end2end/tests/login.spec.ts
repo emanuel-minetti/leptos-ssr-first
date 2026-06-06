@@ -11,12 +11,12 @@ test('login works the good way', async ({page, loginPage}) => {
 
 test('login works the bad way (wrong username)', async ({loginPage}) => {
     await loginPage.navigate();
-    await loginPage.login("xxxxx");
+    await loginPage.login("admin123", "password", "/login?orig_url=/");
     await loginPage.expectInvalidCredentialsError();
 });
 
 test('login works the bad way (wrong password)', async ({loginPage}) => {
     await loginPage.navigate();
-    await loginPage.login(VALID_USERNAME, "12345678");
+    await loginPage.login(VALID_USERNAME, "12345678", "/login?orig_url=/");
     await loginPage.expectInvalidCredentialsError();
 });

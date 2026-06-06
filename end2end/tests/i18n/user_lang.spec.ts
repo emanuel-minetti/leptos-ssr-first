@@ -26,7 +26,6 @@ test.describe("browser lang is english", async () => {
         await loginPage.navigate();
         await expect(loginPage.heading).toHaveText(englishLoginTitle);
         await loginPage.login(username);
-        // Flaky
         await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
         await dbHelper.deleteTestUser(username);
     });

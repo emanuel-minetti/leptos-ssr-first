@@ -13,14 +13,14 @@ import * as process from "node:process";
 export default defineConfig({
   testDir: "./tests",
   /* Maximum time one test can run for. */
-  timeout: 30 * 1000,
+  timeout: process.env.CI ? 5000 : 100000,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
-     * For example in `await expect(locator).toHaveText();`
+     * For example, in `await expect(locator).toHaveText();`
      */
     // avoid flaky tests on parallel testing workers
-    timeout: process.env.CI ? 5000 : 20000,
+    timeout: process.env.CI ? 5000 : 80000,
   },
   /* Run tests in files in parallel */
   fullyParallel: true,
