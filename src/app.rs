@@ -23,6 +23,7 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
+use leptos_sync_ssr::component::SyncSsrSignal;
 use crate::layout::breadcrumbs::{Breadcrumbs, BreadcrumbsProps};
 
 #[component]
@@ -96,6 +97,7 @@ pub fn App() -> impl IntoView {
         Title(TitleProps::builder().text("Leptos SSR First").build()),
         Router(
             RouterProps::builder()
+                ,leptos_sync_ssr(|| -> {})
                 .children(ToChildren::to_children(move || {
                     (
                         {
@@ -196,7 +198,7 @@ pub fn App() -> impl IntoView {
                 }))
                 .build(),
         ),
-    ))
+    )))
 }
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
