@@ -1,4 +1,5 @@
 use crate::i18n::{use_i18n, Locale};
+use crate::layout::breadcrumbs::{Breadcrumbs, BreadcrumbsProps};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::layout::server_message::ServerMessage;
@@ -23,8 +24,7 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
-use leptos_sync_ssr::component::SyncSsrSignal;
-use crate::layout::breadcrumbs::{Breadcrumbs, BreadcrumbsProps};
+use leptos_sync_ssr::component::{SyncSsrSignal, SyncSsrSignalProps};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -97,108 +97,102 @@ pub fn App() -> impl IntoView {
         Title(TitleProps::builder().text("Leptos SSR First").build()),
         Router(
             RouterProps::builder()
-                ,leptos_sync_ssr(|| -> {})
-                .children(ToChildren::to_children(move || {
-                    (
+                .children(ToChildren::to_children(move || {(
                         {
                             header()
                                 .child(NavBar(NavBarProps::builder().lang_setter(set_lang).build()))
                         },
                         { ServerMessage },
-                        { Breadcrumbs(BreadcrumbsProps::builder().crumbs(breadcrumbs).build()) },
                         {
-                            main().child(Routes(
-                                RoutesProps::builder()
-                                    .fallback(move || "Not Found")
-                                    .children(ToChildren::to_children(move || {
-                                        (
+                            SyncSsrSignal(
+                                SyncSsrSignalProps::builder()
+                                    .setup(|| {})
+                                    .children(ToChildren::to_children(move || {(
                                             {
-                                                let path =
-                                                    crate::model::route::Routes::get_by_name(
-                                                        "imprint",
-                                                    )
-                                                    .href;
-                                                Route(
-                                                    RouteProps::builder()
-                                                        .path(StaticSegment(path))
-                                                        .view(Imprint)
+                                                Breadcrumbs(
+                                                    BreadcrumbsProps::builder()
+                                                        .crumbs(breadcrumbs)
                                                         .build(),
                                                 )
                                             },
                                             {
-                                                let path =
-                                                    crate::model::route::Routes::get_by_name(
-                                                        "privacy",
-                                                    )
-                                                    .href;
-                                                Route(
-                                                    RouteProps::builder()
-                                                        .path(StaticSegment(path))
-                                                        .view(Privacy)
-                                                        .build(),
-                                                )
-                                            },
-                                            {
-                                                let path =
-                                                    crate::model::route::Routes::get_by_name(
-                                                        "login",
-                                                    )
-                                                    .href;
-                                                Route(
-                                                    RouteProps::builder()
-                                                        .path(StaticSegment(path))
-                                                        .view(move || {
-                                                            Login(
-                                                                LoginProps::builder()
-                                                                    .set_user(set_user)
-                                                                    .lang_setter(set_lang)
-                                                                    .build(),
-                                                            )
-                                                        })
-                                                        .build(),
-                                                )
-                                            },
-                                            {
-                                                let path =
-                                                    crate::model::route::Routes::get_by_name(
-                                                        "home",
-                                                    )
-                                                    .href;
-                                                ProtectedRoute(
-                                                    ProtectedRouteProps::builder()
-                                                        .path(StaticSegment(path))
-                                                        .view(HomePage)
-                                                        .redirect_path(move || "/login?orig_url=/")
-                                                        .condition(move || is_logged_in())
-                                                        .build(),
-                                                )
-                                            },
-                                            {
-                                                ProtectedRoute(
-                                                    ProtectedRouteProps::builder()
-                                                        .path(WildcardSegment("any"))
-                                                        .view(NotFound)
-                                                        .redirect_path(move || {
-                                                            let params = use_params_map().get();
-                                                            let (_, orig_url) =
-                                                                params.into_iter().last().unwrap();
-                                                            format!("/login?orig_url=/{}", orig_url)
-                                                        })
-                                                        .condition(move || is_logged_in())
-                                                        .build(),
-                                                )
-                                            },
-                                        )
-                                    }))
-                                    .build(),
-                            ))
-                        },
+                                                main().child(Routes(
+                                                    RoutesProps::builder()
+                                                        .fallback(move || "Not Found")
+                                                        .children(ToChildren::to_children(move || {(
+                                                            {
+                                                                let path =
+                                                                    crate::model::route::Routes::get_by_name("imprint", ).href;
+                                                                Route(
+                                                                    RouteProps::builder()
+                                                                        .path(
+                                                                            StaticSegment(path,),)
+                                                                                .view(Imprint)
+                                                                                .build(),
+                                                                )
+                                                            },
+                                                            {
+                                                                let path =
+                                                                    crate::model::route::Routes::get_by_name("privacy", ).href;
+                                                                Route(
+                                                                    RouteProps::builder()
+                                                                        .path(
+                                                                            StaticSegment(path, ), )
+                                                                                .view(Privacy)
+                                                                                .build(),
+                                                                )
+                                                            },
+                                                            {
+                                                                let path =
+                                                                    crate::model::route::Routes::get_by_name("login", ).href;
+                                                                Route(
+                                                                    RouteProps::builder()
+                                                                        .path(
+                                                                            StaticSegment(path, ), )
+                                                                                .view(move || {
+                                                                                    Login(
+                                                                                        LoginProps::builder()
+                                                                                            .set_user(set_user)
+                                                                                            .lang_setter(set_lang)
+                                                                                            .build(),
+                                                                                    )
+                                                                                })
+                                                                                .build(),
+                                                                )
+                                                            },
+                                                            {
+                                                                let path =
+                                                                    crate::model::route::Routes::get_by_name("home", ).href;
+                                                                ProtectedRoute(
+                                                                    ProtectedRouteProps::builder()
+                                                                        .path(StaticSegment(path))
+                                                                        .view(HomePage)
+                                                                        .redirect_path(move || "/login?orig_url=/")
+                                                                        .condition(move || is_logged_in())
+                                                                .build(),
+                                                                )
+                                                            },
+                                                            {
+                                                                ProtectedRoute(
+                                                                    ProtectedRouteProps::builder()
+                                                                        .path(WildcardSegment("any"))
+                                                                        .view(NotFound)
+                                                                        .redirect_path(move || {
+                                                                            let params = use_params_map().get();
+                                                                            let (_, orig_url) =
+                                                                            params.into_iter().last().unwrap();
+                                                                            format!("/login?orig_url=/{}", orig_url)
+                                                                        })
+                                                                        .condition(move || is_logged_in())
+                                                                        .build(),
+                                                                )
+                                                            },
+                                                        )}, )).build(),
+                                                )) },) })).build(),
+                            )},
                         { Footer() },
-                    )
-                }))
-                .build(),
-        ),
-    )))
+                ) })).build(),
+        ),))
 }
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
