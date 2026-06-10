@@ -158,7 +158,7 @@ pub fn App() -> impl IntoView {
                                                             },
                                                             {
                                                                 let path =
-                                                                    crate::model::route::Routes::get_by_name("homePageTitle", ).expect(
+                                                                    crate::model::route::Routes::get_by_name("home", ).expect(
                                                                         "A route by this name should be present").href;
                                                                 ProtectedRoute(
                                                                     ProtectedRouteProps::builder()
