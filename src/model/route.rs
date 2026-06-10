@@ -5,11 +5,17 @@ use serde::de::{self, Deserializer, MapAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct Route {
     pub href: &'static str,
     #[serde(skip)]
     pub label: fn(I18nContext<Locale>) -> AnyView,
+}
+
+impl PartialEq for Route {
+    fn eq(&self, other: &Self) -> bool {
+        self.href == other.href
+    }
 }
 
 // TODO: remove this AI-generated code
@@ -29,7 +35,7 @@ impl<'de> Deserialize<'de> for Route {
                 while let Some(key) = map.next_key::<String>()? {
                     match key.as_str() {
                         "href" => href = Some(map.next_value()?),
-                        _ => { map.next_value::<serde::de::IgnoredAny>()?; }
+                        _ => { map.next_value::<de::IgnoredAny>()?; }
                     }
                 }
                 let href = href.ok_or_else(|| de::Error::missing_field("href"))?;
