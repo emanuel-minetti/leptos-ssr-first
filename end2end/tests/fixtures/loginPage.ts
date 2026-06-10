@@ -31,11 +31,13 @@ class LoginPage {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    async login(username: string, password = 'password') {
+    async login(username: string, password = 'password', expectedUrl = '/') {
         await this.usernameInput.fill(username);
         await this.passwordInput.fill(password);
         await this.loginButton.click();
+        await this.page.waitForURL(expectedUrl);
     }
+
 
     async setLang(selectName: string) {
         await this.langSelect.selectOption(selectName);
@@ -43,6 +45,7 @@ class LoginPage {
 
     async expectInvalidCredentialsError() {
         const text = this.i18nHelper.get(this.lang, "invalidCredentials")
+        // Flaky
         await expect(this.page.getByText(text)).toBeVisible();
         await expect(this.page).toHaveURL(LOGIN_URL_PATTERN);
     }

@@ -16,5 +16,6 @@
   "redirecting": "Weiterleitung ...",
   "usernameRequired": "Der Benutzername ist erforderlich.",
   "passwordRequired": "Das Passwort ist erforderlich.",
-  "homePageTitle": "Startseite"
+  "homePageTitle": "Startseite",
+  "notFound": "Seite nicht gefunden"
 }

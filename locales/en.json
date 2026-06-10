@@ -16,5 +16,6 @@
   "redirecting": "Redirecting ...",
   "usernameRequired": "Username is required",
   "passwordRequired": "Password is required",
-  "homePageTitle": "Home Page"
+  "homePageTitle": "Home Page",
+  "notFound": "Page Not Found"
 }

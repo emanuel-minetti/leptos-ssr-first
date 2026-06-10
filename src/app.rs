@@ -23,28 +23,7 @@ use leptos_router::{
     components::{Route, Router, Routes},
     StaticSegment, WildcardSegment,
 };
-
-pub fn shell(options: LeptosOptions) -> impl IntoView {
-    View::new((
-        doctype("html"),
-        html().lang("en").child((
-            head().child((
-                InertElement::new("<meta charset=\"utf-8\" />"),
-                InertElement::new(
-                    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
-                ),
-                AutoReload(AutoReloadProps::builder().options(options.clone()).build()),
-                HydrationScripts(
-                    HydrationScriptsProps::builder()
-                        .options(options.clone())
-                        .build(),
-                ),
-                MetaTags(),
-            )),
-            body().child(App()),
-        )),
-    ))
-}
+use crate::layout::breadcrumbs::{Breadcrumbs, BreadcrumbsProps};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -93,6 +72,10 @@ pub fn App() -> impl IntoView {
     let (user, set_user) = signal(None::<User>);
     provide_context(user);
 
+    // initializing breadcrumbs
+    let (breadcrumbs, set_breadcrumbs) = signal::<Breadcrumbs>(vec![]);
+    provide_context(set_breadcrumbs);
+
     // the guard for protected routes
     let is_logged_in = move || {
         if user.get().is_some() {
@@ -120,6 +103,7 @@ pub fn App() -> impl IntoView {
                                 .child(NavBar(NavBarProps::builder().lang_setter(set_lang).build()))
                         },
                         { ServerMessage },
+                        { Breadcrumbs(BreadcrumbsProps::builder().crumbs(breadcrumbs).build()) },
                         {
                             main().child(Routes(
                                 RoutesProps::builder()
@@ -127,25 +111,40 @@ pub fn App() -> impl IntoView {
                                     .children(ToChildren::to_children(move || {
                                         (
                                             {
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "imprint",
+                                                    )
+                                                    .href;
                                                 Route(
                                                     RouteProps::builder()
-                                                        .path(StaticSegment("/imprint"))
+                                                        .path(StaticSegment(path))
                                                         .view(Imprint)
                                                         .build(),
                                                 )
                                             },
                                             {
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "privacy",
+                                                    )
+                                                    .href;
                                                 Route(
                                                     RouteProps::builder()
-                                                        .path(StaticSegment("/privacy"))
+                                                        .path(StaticSegment(path))
                                                         .view(Privacy)
                                                         .build(),
                                                 )
                                             },
                                             {
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "login",
+                                                    )
+                                                    .href;
                                                 Route(
                                                     RouteProps::builder()
-                                                        .path(StaticSegment("/login"))
+                                                        .path(StaticSegment(path))
                                                         .view(move || {
                                                             Login(
                                                                 LoginProps::builder()
@@ -158,9 +157,14 @@ pub fn App() -> impl IntoView {
                                                 )
                                             },
                                             {
+                                                let path =
+                                                    crate::model::route::Routes::get_by_name(
+                                                        "home",
+                                                    )
+                                                    .href;
                                                 ProtectedRoute(
                                                     ProtectedRouteProps::builder()
-                                                        .path(StaticSegment(""))
+                                                        .path(StaticSegment(path))
                                                         .view(HomePage)
                                                         .redirect_path(move || "/login?orig_url=/")
                                                         .condition(move || is_logged_in())
@@ -192,5 +196,27 @@ pub fn App() -> impl IntoView {
                 }))
                 .build(),
         ),
+    ))
+}
+
+pub fn shell(options: LeptosOptions) -> impl IntoView {
+    View::new((
+        doctype("html"),
+        html().lang("en").child((
+            head().child((
+                InertElement::new("<meta charset=\"utf-8\" />"),
+                InertElement::new(
+                    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />",
+                ),
+                AutoReload(AutoReloadProps::builder().options(options.clone()).build()),
+                HydrationScripts(
+                    HydrationScriptsProps::builder()
+                        .options(options.clone())
+                        .build(),
+                ),
+                MetaTags(),
+            )),
+            body().child(App()),
+        )),
     ))
 }
