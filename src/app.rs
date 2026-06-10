@@ -1,5 +1,5 @@
 use crate::i18n::{use_i18n, Locale};
-use crate::layout::breadcrumbs::{Breadcrumbs, BreadcrumbsProps};
+use crate::layout::breadcrumbs::{Breadcrumbs, ShowBreadcrumbs};
 use crate::layout::footer::Footer;
 use crate::layout::navbar::{NavBar, NavBarProps};
 use crate::layout::server_message::ServerMessage;
@@ -25,6 +25,7 @@ use leptos_router::{
     StaticSegment, WildcardSegment,
 };
 use leptos_sync_ssr::component::{SyncSsrSignal, SyncSsrSignalProps};
+use leptos_sync_ssr::portlet::PortletCtx;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -73,10 +74,6 @@ pub fn App() -> impl IntoView {
     let (user, set_user) = signal(None::<User>);
     provide_context(user);
 
-    // initializing breadcrumbs
-    let (breadcrumbs, set_breadcrumbs) = signal::<Breadcrumbs>(vec![]);
-    provide_context(set_breadcrumbs);
-
     // the guard for protected routes
     let is_logged_in = move || {
         if user.get().is_some() {
@@ -106,16 +103,12 @@ pub fn App() -> impl IntoView {
                         {
                             SyncSsrSignal(
                                 SyncSsrSignalProps::builder()
-                                    .setup(|| {})
+                                    .setup(|| {
+                                        <PortletCtx<Breadcrumbs>>::provide();
+                                    })
                                     .children(ToChildren::to_children(move || {(
-                                            {
-                                                Breadcrumbs(
-                                                    BreadcrumbsProps::builder()
-                                                        .crumbs(breadcrumbs)
-                                                        .build(),
-                                                )
-                                            },
-                                            {
+                                        { ShowBreadcrumbs },
+                                        {
                                                 main().child(Routes(
                                                     RoutesProps::builder()
                                                         .fallback(move || "Not Found")
