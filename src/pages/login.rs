@@ -13,6 +13,7 @@ use leptos::tachys::html::event;
 use leptos::{component, server, IntoView};
 use leptos_router::hooks::{use_navigate, use_query_map};
 use leptos_router::NavigateOptions;
+use leptos_sync_ssr::portlet::PortletCtx;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlFormElement, SubmitEvent};
@@ -63,8 +64,14 @@ pub fn Login(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let route = Routes::get_by_name("login");
-    let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
-    set_crumbs.set(vec![route.clone()]);
+    // let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
+    // set_crumbs.set(vec![route.clone()]);
+    let breadcrumb_ctx = expect_context::<PortletCtx<Breadcrumbs>>();
+    breadcrumb_ctx.set_with(move ||  {
+        async move {
+            Some(Breadcrumbs {crumbs: vec![route.clone()]})
+        }
+    });
     let login = ServerAction::<Login>::new();
     let lang = get_lang();
     let orig_url = use_query_map()
