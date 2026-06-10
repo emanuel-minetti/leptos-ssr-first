@@ -1,7 +1,6 @@
 use leptos::html::{div, h1, ElementChild};
-use leptos::prelude::{expect_context, ClassAttribute, Set, WriteSignal};
+use leptos::prelude::{expect_context, ClassAttribute};
 use leptos::{component, IntoView};
-use leptos::context::use_context;
 use leptos_sync_ssr::portlet::PortletCtx;
 use crate::i18n::*;
 use crate::layout::breadcrumbs::Breadcrumbs;
