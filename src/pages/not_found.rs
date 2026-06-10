@@ -20,7 +20,7 @@ pub fn NotFound() -> impl IntoView {
         resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
     }
     let i18n = use_i18n();
-    let route = Routes::get_by_name("not_found");
+    let route = Routes::get_by_name("not_found").expect("A route by this name should be present");
 
     h1().child((route.label)(i18n))
 }

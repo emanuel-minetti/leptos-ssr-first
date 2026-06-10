@@ -115,7 +115,8 @@ pub fn App() -> impl IntoView {
                                                         .children(ToChildren::to_children(move || {(
                                                             {
                                                                 let path =
-                                                                    crate::model::route::Routes::get_by_name("imprint", ).href;
+                                                                    crate::model::route::Routes::get_by_name("imprint", ).expect(
+                                                                        "A route by this name should be present").href;
                                                                 Route(
                                                                     RouteProps::builder()
                                                                         .path(
@@ -126,7 +127,8 @@ pub fn App() -> impl IntoView {
                                                             },
                                                             {
                                                                 let path =
-                                                                    crate::model::route::Routes::get_by_name("privacy", ).href;
+                                                                    crate::model::route::Routes::get_by_name("privacy", ).expect(
+                                                                        "A route by this name should be present").href;
                                                                 Route(
                                                                     RouteProps::builder()
                                                                         .path(
@@ -137,7 +139,8 @@ pub fn App() -> impl IntoView {
                                                             },
                                                             {
                                                                 let path =
-                                                                    crate::model::route::Routes::get_by_name("login", ).href;
+                                                                    crate::model::route::Routes::get_by_name("login", ).expect(
+                                                                        "A route by this name should be present").href;
                                                                 Route(
                                                                     RouteProps::builder()
                                                                         .path(
@@ -155,7 +158,8 @@ pub fn App() -> impl IntoView {
                                                             },
                                                             {
                                                                 let path =
-                                                                    crate::model::route::Routes::get_by_name("home", ).href;
+                                                                    crate::model::route::Routes::get_by_name("homePageTitle", ).expect(
+                                                                        "A route by this name should be present").href;
                                                                 ProtectedRoute(
                                                                     ProtectedRouteProps::builder()
                                                                         .path(StaticSegment(path))

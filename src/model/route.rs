@@ -39,7 +39,7 @@ impl<'de> Deserialize<'de> for Route {
                     }
                 }
                 let href = href.ok_or_else(|| de::Error::missing_field("href"))?;
-                Ok(Routes::get_by_name(&href).clone())
+                Ok(Routes::get_by_name(&href).unwrap().clone())
             }
         }
 
@@ -79,14 +79,24 @@ static ROUTES: Routes = Routes {
 };
 
 impl Routes {
-    pub fn get_by_name(key: &str) -> &'static Route {
+    pub fn get_by_name(key: &str) -> Option<&'static Route> {
         match key {
-            "imprint" => &ROUTES.imprint,
-            "privacy" => &ROUTES.privacy,
-            "homePageTitle" => &ROUTES.home,
-            "login" => &ROUTES.login,
-            "not_found" => &ROUTES.not_found,
-            _ => &ROUTES.home,
+            "imprint" => Some(&ROUTES.imprint),
+            "privacy" => Some(&ROUTES.privacy),
+            "homePageTitle" => Some(&ROUTES.home),
+            "login" => Some(&ROUTES.login),
+            "not_found" => Some(&ROUTES.not_found),
+            _ => None,
+        }
+    }
+    
+    pub fn get_by_href(href: &str) -> Option<&'static Route> {
+        match href {
+            "/imprint" => Some(&ROUTES.imprint),
+            "/privacy" => Some(&ROUTES.privacy),
+            "/" => Some(&ROUTES.home),
+            "/login" => Some(&ROUTES.login),
+            _ => None,
         }
     }
 }

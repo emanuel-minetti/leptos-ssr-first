@@ -9,7 +9,7 @@ use leptos_sync_ssr::portlet::PortletCtx;
 #[component]
 pub fn Privacy() -> impl IntoView {
     let i18n = use_i18n();
-    let route = Routes::get_by_name("privacy");
+    let route = Routes::get_by_name("privacy").expect("A route by this name should be present");
     // let set_crumbs =
     //     use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
     // set_crumbs.set(vec![route.clone()]);

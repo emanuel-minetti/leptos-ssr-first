@@ -12,7 +12,7 @@ use crate::model::route::{Routes};
 pub fn HomePage() -> impl IntoView {
     let lang = use_context::<ReadSignal<String>>().expect("no lang specified in context");
     let i18n = use_i18n();
-    let route = Routes::get_by_name("homePageTitle");
+    let route = Routes::get_by_name("homePageTitle").expect("A route by this name should be present");
     // let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
     // set_crumbs.set(vec![route.clone()]);
     let breadcrumb_ctx = expect_context::<PortletCtx<Breadcrumbs>>();
