@@ -21,5 +21,5 @@ pub fn NotFound() -> impl IntoView {
     }
     let i18n = use_i18n();
 
-    h1().child(t!(i18n, imprint))
+    h1().child(t!(i18n, notFound))
 }
