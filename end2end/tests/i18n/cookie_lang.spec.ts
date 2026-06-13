@@ -33,7 +33,7 @@ test.describe('browser lang is english', () => {
 
     test("selected lang is used and preserved", async () => {
         await langSelect.selectOption(englishGerman);
-        // flaky
+        // flaky (3/10)
         await expect(heading).toHaveText(germanLogin);
         await expect(langSelect.locator('option[selected]')).toHaveText(germanGerman);
 
