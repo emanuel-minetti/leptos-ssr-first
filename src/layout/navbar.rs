@@ -45,12 +45,14 @@ pub fn NavBar(lang_setter: WriteSignal<String>) -> impl IntoView {
                                 } else {
                                     "de"
                                 };
-                                lang_setter.set(option_value.to_string());
+                                batch(move || {
+                                    lang_setter.set(option_value.to_string());
+                                    set_lang_to_i18n(&option_value);
+                                });
                                 set_lang_to_locale_storage(&option_value);
-                                set_lang_to_i18n(&option_value);
                                 // set lang to server if applicable
                                 if user.get().is_some() {
-                                    let lang: Language = lang.get().into();
+                                    let lang: Language = option_value.into();
                                     spawn_local(async {
                                         set_lang(lang)
                                             .await

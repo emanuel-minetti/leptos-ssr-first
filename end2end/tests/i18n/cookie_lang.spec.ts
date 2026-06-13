@@ -33,7 +33,7 @@ test.describe('browser lang is english', () => {
 
     test("selected lang is used and preserved", async () => {
         await langSelect.selectOption(englishGerman);
-        // Flaky with on CLI testing with massive timeout
+        // flaky
         await expect(heading).toHaveText(germanLogin);
         await expect(langSelect.locator('option[selected]')).toHaveText(germanGerman);
 
@@ -63,8 +63,8 @@ test.describe('browser lang is german', () => {
 
     test("selected lang is used and preserved", async () => {
         await langSelect.selectOption(germanEnglish);
-        await expect(langSelect.locator('option[selected]')).toHaveText(englishEnglish);
         await expect(heading).toHaveText(englishLogin);
+        await expect(langSelect.locator('option[selected]')).toHaveText(englishEnglish);
 
         await page.reload();
         await expect(langSelect.locator('option[selected]')).toHaveText(englishEnglish);
