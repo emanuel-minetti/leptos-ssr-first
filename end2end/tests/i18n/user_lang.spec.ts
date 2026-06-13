@@ -59,6 +59,7 @@ test.describe("browser lang is german", async () => {
     test('user lang is english', async ({page, dbHelper, loginPage}) => {
         const username = await dbHelper.addTestUser('en');
         await loginPage.navigate();
+        // flaky
         await expect(loginPage.heading).toHaveText(germanLoginTitle);
         await loginPage.login(username);
         await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);

@@ -64,8 +64,6 @@ pub fn Login(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let route = Routes::get_by_name("login").expect("A route by this name should be present");
-    // let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
-    // set_crumbs.set(vec![route.clone()]);
     let breadcrumb_ctx = expect_context::<PortletCtx<Breadcrumbs>>();
     breadcrumb_ctx.set_with(move ||  {
         async move {

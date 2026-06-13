@@ -28,10 +28,12 @@ class LoginPage {
     async navigate() {
         await this.page.goto("/");
         await expect(this.page).toHaveURL(LOGIN_URL_PATTERN);
+        await expect(this.heading).toBeVisible();  // wait for hydration to settle
     }
 
     // noinspection JSUnusedGlobalSymbols
     async login(username: string, password = 'password', expectedUrl = '/') {
+        // flaky
         await this.usernameInput.fill(username);
         await this.passwordInput.fill(password);
         await this.loginButton.click();
