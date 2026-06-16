@@ -1,12 +1,14 @@
 use crate::utils::get_lang;
 use leptos::html::{div, strong, ElementChild};
-use leptos::prelude::{AnyView, ClassAttribute, IntoAny, Read, Resource, Suspend, Suspense, SuspenseProps};
+use leptos::prelude::{expect_context, AnyView, ClassAttribute, Get, IntoAny, Read, Resource, Suspend, Suspense, SuspenseProps};
 use leptos::{component, server, IntoView};
 use leptos::children::ToChildren;
 use leptos_i18n::t;
+use leptos_sync_ssr::portlet::PortletCtx;
 use serde::{Deserialize, Deserializer, Serialize};
 use server_fn::ServerFnError;
 use crate::i18n::use_i18n;
+use crate::layout::breadcrumbs::Breadcrumbs;
 
 #[derive(Serialize, Default, Clone, PartialEq)]
 enum MessageOfTheDayLevel {
@@ -160,9 +162,9 @@ pub struct ServerMessageOfTheDay {
 #[component]
 pub fn ServerMessage() -> impl IntoView {
     let i18n = use_i18n();
+    let crumbs = expect_context::<PortletCtx<Breadcrumbs>>().inner_resource();
     let message_resource = Resource::new(
-        // TODO make dependent on breadcrumbs change
-         || {},
+         move || {crumbs.get().unwrap_or(Some(Breadcrumbs {crumbs: vec![]}).clone())},
         |_| get_message(),
     );
 

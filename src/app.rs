@@ -38,7 +38,6 @@ pub fn App() -> impl IntoView {
     });
     provide_context(i18n);
     let i18n_signal = use_i18n();
-    // TODO deduce locale from cookie or request header
     i18n_signal.set_locale(Locale::de);
     let (lang, set_lang) = signal("de".to_string());
 
