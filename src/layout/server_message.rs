@@ -1,10 +1,12 @@
 use crate::utils::get_lang;
 use leptos::html::{div, strong, ElementChild};
-use leptos::prelude::{AnyView, ClassAttribute, Get, IntoAny, Read};
-use leptos::server::OnceResource;
+use leptos::prelude::{AnyView, ClassAttribute, IntoAny, Read, Resource, Suspend, Suspense, SuspenseProps};
 use leptos::{component, server, IntoView};
+use leptos::children::ToChildren;
+use leptos_i18n::t;
 use serde::{Deserialize, Deserializer, Serialize};
 use server_fn::ServerFnError;
+use crate::i18n::use_i18n;
 
 #[derive(Serialize, Default, Clone, PartialEq)]
 enum MessageOfTheDayLevel {
@@ -157,23 +159,27 @@ pub struct ServerMessageOfTheDay {
 
 #[component]
 pub fn ServerMessage() -> impl IntoView {
-    let message_resource = OnceResource::new(get_message());
-    let lang = get_lang();
+    let i18n = use_i18n();
+    let message_resource = Resource::new(
+        // TODO make dependent on breadcrumbs change
+         || {},
+        |_| get_message(),
+    );
 
-    div().child(move || match message_resource.get() {
-        None => "Loading server message ...".into_any(),
-        Some(result) => match result {
-            Ok(server_message) => {
-                // here reactiveness (on reloading) is happening because SSR side lang is ""
-                if ["de", "en"].contains(&lang.read().as_str()) {
-                    show_message(&server_message).into_any()
-                } else {
-                    "".into_any()
+    Suspense(SuspenseProps::builder().fallback(
+        move || t!(i18n, serverMessageLoading).into_any()
+    ).children(ToChildren::to_children(
+        move || Suspend::new(
+            async move {
+                match message_resource.await {
+                    Ok(message) => {
+                        {move || show_message(&message)}.into_any()
+                    },
+                    Err(e) => t!(i18n, serverMessageError, error = e.to_string()).into_any(),
                 }
             }
-            Err(e) => ("Server message error: ".to_string() + e.to_string().as_str()).into_any(),
-        },
-    })
+        ))
+    ).build())
 }
 
 fn show_message(message: &ServerMessageOfTheDay) -> impl IntoView {
@@ -185,7 +191,6 @@ fn show_message(message: &ServerMessageOfTheDay) -> impl IntoView {
     };
     let class_string = move || message.level.to_alert_class();
 
-    // if the server message (without the whole page) is reloaded, this won't be reactive
     if !message.enabled {
         div().child("").into_any()
     } else {

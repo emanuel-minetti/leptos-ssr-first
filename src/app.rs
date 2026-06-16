@@ -38,12 +38,9 @@ pub fn App() -> impl IntoView {
     });
     provide_context(i18n);
     let i18n_signal = use_i18n();
-    i18n_signal.set_locale(Locale::en);
-
-    // initializing the global value lang needed by non-login pages
-    // here the SSR lang is set, so for the reactiveness of the server message, it shouldn't match
-    // any existing lang
-    let (lang, set_lang) = signal("".to_string());
+    // TODO deduce locale from cookie or request header
+    i18n_signal.set_locale(Locale::de);
+    let (lang, set_lang) = signal("de".to_string());
 
     let browser_lang = move || get_lang_from_browser();
 

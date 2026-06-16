@@ -17,5 +17,7 @@
   "usernameRequired": "Username is required",
   "passwordRequired": "Password is required",
   "homePageTitle": "Home Page",
-  "notFound": "Page Not Found"
+  "notFound": "Page Not Found",
+  "serverMessageLoading": "Loading server message ...",
+  "serverMessageError": "Server message error: : {{ error }}"
 }
