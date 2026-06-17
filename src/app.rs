@@ -38,6 +38,11 @@ pub fn App() -> impl IntoView {
     });
     provide_context(i18n);
     let i18n_signal = use_i18n();
+    // derive initial lang from what leptos_i18n already detected server-side
+    // let initial_lang = match i18n_signal.get_locale() {
+    //     Locale::de => "de",
+    //     Locale::en => "en",
+    // }.to_string();
     i18n_signal.set_locale(Locale::de);
     let (lang, set_lang) = signal("de".to_string());
 

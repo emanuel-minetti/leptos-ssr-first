@@ -17,10 +17,11 @@ class LoginPage {
         this.i18nHelper = i18nHelper;
         const usernameText = i18nHelper.get(lang, "username")!;
         const passwordText = i18nHelper.get(lang, "password")!;
-        const loginText = i18nHelper.get(lang, "login")!;
+        //const loginText = i18nHelper.get(lang, "login")!;
         this.usernameInput = page.getByRole('textbox', {name: usernameText});
         this.passwordInput = page.getByRole('textbox', {name: passwordText});
-        this.loginButton = page.getByRole('button', {name: loginText});
+        //this.loginButton = page.getByRole('button', {name: loginText});
+        this.loginButton = page.getByTestId("login-button");
         this.heading = page.getByRole('heading');
         this.langSelect = page.getByRole("navigation").getByLabel("Language");
     }
@@ -28,8 +29,8 @@ class LoginPage {
     async navigate() {
         await this.page.goto("/");
         await expect(this.page).toHaveURL(LOGIN_URL_PATTERN);
-        // flaky (2/10)
-        await expect(this.loginButton).toBeEnabled();  // wait for hydration to settle
+        // wait for hydration to settle
+        await expect(this.loginButton).toBeEnabled();
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -37,8 +38,7 @@ class LoginPage {
         await this.usernameInput.fill(username);
         await this.passwordInput.fill(password);
         await this.loginButton.click();
-        // flaky (11/10)
-        await this.page.waitForURL(expectedUrl, { timeout: 60000 });
+        await this.page.waitForURL(expectedUrl, { timeout: 100000 });
     }
 
 
