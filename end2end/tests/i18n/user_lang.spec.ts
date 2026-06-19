@@ -24,6 +24,7 @@ test.describe("browser lang is english", async () => {
     test('user lang is german', async ({page, dbHelper, loginPage}) => {
         const username = await dbHelper.addTestUser('de');
         await loginPage.navigate();
+        // flaky (2/10)
         await expect(loginPage.heading).toHaveText(englishLoginTitle);
         await loginPage.login(username);
         await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
@@ -47,7 +48,6 @@ test.describe("browser lang is english", async () => {
             await loginPage.navigate();
             await expect(loginPage.heading).toHaveText(englishLoginTitle);
             await loginPage.login(username);
-            // Flaky
             await expect(page.getByRole('heading')).toHaveText(germanHomeTitle);
             // @ts-ignore
             await browser.contexts().pop().close();
@@ -60,7 +60,6 @@ test.describe("browser lang is german", async () => {
     test('user lang is english', async ({page, dbHelper, loginPage}) => {
         const username = await dbHelper.addTestUser('en');
         await loginPage.navigate();
-        // Flaky
         await expect(loginPage.heading).toHaveText(germanLoginTitle);
         await loginPage.login(username);
         await expect(page.getByRole('heading')).toHaveText(englishHomeTitle);

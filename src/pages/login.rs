@@ -1,6 +1,8 @@
 use crate::api::error::ApiError;
 use crate::api::response::ApiResponse;
 use crate::i18n::*;
+use crate::layout::breadcrumbs::Breadcrumbs;
+use crate::model::route::Routes;
 use crate::model::user::User;
 use crate::utils::{
     get_lang, set_lang_to_i18n, set_lang_to_locale_storage, set_login_data_to_session_storage,
@@ -13,11 +15,10 @@ use leptos::tachys::html::event;
 use leptos::{component, server, IntoView};
 use leptos_router::hooks::{use_navigate, use_query_map};
 use leptos_router::NavigateOptions;
+use leptos_sync_ssr::portlet::PortletCtx;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlFormElement, SubmitEvent};
-use crate::layout::breadcrumbs::Breadcrumbs;
-use crate::model::route::Routes;
 
 const USERNAME_MAX_LENGTH: u8 = 20;
 const PASSWORD_MAX_LENGTH: u8 = 32;
@@ -62,9 +63,13 @@ pub fn Login(
     lang_setter: WriteSignal<String>,
 ) -> impl IntoView {
     let i18n = use_i18n();
-    let route = Routes::get_by_name("login");
-    let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
-    set_crumbs.set(vec![route.clone()]);
+    let route = Routes::get_by_name("login").expect("A route by this name should be present");
+    let breadcrumb_ctx = expect_context::<PortletCtx<Breadcrumbs>>();
+    breadcrumb_ctx.set_with(move || async move {
+        Some(Breadcrumbs {
+            crumbs: vec![route.clone()],
+        })
+    });
     let login = ServerAction::<Login>::new();
     let lang = get_lang();
     let orig_url = use_query_map()
@@ -74,6 +79,7 @@ pub fn Login(
     let navigate = use_navigate();
 
     Effect::new(move || {
+
         if let Some(Ok(response)) = login.value().get() {
             if response.error.is_none() {
                 set_login_data_to_session_storage(response.token.as_str(), response.expires_at);
@@ -197,8 +203,9 @@ pub fn Login(
                                     input()
                                         .r#type("text")
                                         .class("form-control")
-                                        .id("ref1")
                                         .name("params[username]")
+                                        .id("ref1")
+                                        .attr("data-testid", "login-username")
                                 },
                                 {
                                     div()
@@ -218,10 +225,11 @@ pub fn Login(
                                         input()
                                             .r#type("password")
                                             .class("form-control")
-                                            .id("ref2")
                                             .name("params[password]")
                                             .required(true)
                                             .maxlength(PASSWORD_MAX_LENGTH as i64)
+                                            .id("ref2")
+                                            .attr("data-testid", "login-password")
                                     },
                                     {
                                         div()
@@ -233,7 +241,11 @@ pub fn Login(
                             {
                                 button()
                                     .r#type("submit")
+                                    .id("login-button")
+                                    .attr("data-testid", "login-button")
                                     .class("btn btn-primary")
+                                    // disable the button until hydration has settled
+                                    .prop("disabled", move || login.pending().get())
                                     .child(t![i18n, login])
                             },
                             { div().class("mt-2").child(move || message()) },

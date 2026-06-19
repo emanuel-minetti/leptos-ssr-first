@@ -1,10 +1,7 @@
 use leptos::{component, IntoView};
-use leptos::context::use_context;
 use leptos::html::{h1, ElementChild};
-use leptos::prelude::{Set, WriteSignal};
+use leptos_i18n::__private::macros_reexport::t;
 use crate::i18n::use_i18n;
-use crate::layout::breadcrumbs::Breadcrumbs;
-use crate::model::route::Routes;
 
 #[component]
 pub fn NotFound() -> impl IntoView {
@@ -23,9 +20,6 @@ pub fn NotFound() -> impl IntoView {
         resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
     }
     let i18n = use_i18n();
-    let route = Routes::get_by_name("not_found");
-    let set_crumbs = use_context::<WriteSignal<Breadcrumbs>>().expect("no crumbs specified in context");
-    set_crumbs.set(vec![route.clone()]);
 
-    h1().child((route.label)(i18n))
+    h1().child(t!(i18n, notFound))
 }

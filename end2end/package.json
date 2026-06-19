@@ -12,9 +12,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.60.0",
     "@types/node": "^25.2.3",
-    "pg": "^8.18.0",
-    "@types/pg": "^8.18.0"
+    "@types/pg": "^8.18.0",
+    "pg": "^8.18.0"
   }
 }
