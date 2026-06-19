@@ -18,7 +18,7 @@ use leptos_router::NavigateOptions;
 use leptos_sync_ssr::portlet::PortletCtx;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlButtonElement, HtmlFormElement, SubmitEvent};
+use web_sys::{HtmlFormElement, SubmitEvent};
 
 const USERNAME_MAX_LENGTH: u8 = 20;
 const PASSWORD_MAX_LENGTH: u8 = 32;
@@ -79,12 +79,6 @@ pub fn Login(
     let navigate = use_navigate();
 
     Effect::new(move || {
-        // enable the login button after hydration has settled
-        // document()
-        //     .get_element_by_id("login-button")
-        //     .expect("Login Button should be present")
-        //     .unchecked_into::<HtmlButtonElement>()
-        //     .set_disabled(false);
 
         if let Some(Ok(response)) = login.value().get() {
             if response.error.is_none() {
@@ -209,8 +203,9 @@ pub fn Login(
                                     input()
                                         .r#type("text")
                                         .class("form-control")
-                                        .id("ref1")
                                         .name("params[username]")
+                                        .id("ref1")
+                                        .attr("data-testid", "login-username")
                                 },
                                 {
                                     div()
@@ -230,10 +225,11 @@ pub fn Login(
                                         input()
                                             .r#type("password")
                                             .class("form-control")
-                                            .id("ref2")
                                             .name("params[password]")
                                             .required(true)
                                             .maxlength(PASSWORD_MAX_LENGTH as i64)
+                                            .id("ref2")
+                                            .attr("data-testid", "login-password")
                                     },
                                     {
                                         div()
@@ -244,9 +240,9 @@ pub fn Login(
                             },
                             {
                                 button()
+                                    .r#type("submit")
                                     .id("login-button")
                                     .attr("data-testid", "login-button")
-                                    .r#type("submit")
                                     .class("btn btn-primary")
                                     // disable the button until hydration has settled
                                     .prop("disabled", move || login.pending().get())

@@ -15,12 +15,8 @@ class LoginPage {
     constructor(private readonly page: Page, lang: String, i18nHelper: I18n) {
         this.lang = lang;
         this.i18nHelper = i18nHelper;
-        const usernameText = i18nHelper.get(lang, "username")!;
-        const passwordText = i18nHelper.get(lang, "password")!;
-        //const loginText = i18nHelper.get(lang, "login")!;
-        this.usernameInput = page.getByRole('textbox', {name: usernameText});
-        this.passwordInput = page.getByRole('textbox', {name: passwordText});
-        //this.loginButton = page.getByRole('button', {name: loginText});
+        this.usernameInput = page.getByTestId("login-username");
+        this.passwordInput = page.getByTestId("login-password");
         this.loginButton = page.getByTestId("login-button");
         this.heading = page.getByRole('heading');
         this.langSelect = page.getByRole("navigation").getByLabel("Language");
@@ -38,7 +34,8 @@ class LoginPage {
         await this.usernameInput.fill(username);
         await this.passwordInput.fill(password);
         await this.loginButton.click();
-        await this.page.waitForURL(expectedUrl, { timeout: 100000 });
+        // flaky (18/10)
+        await this.page.waitForURL(expectedUrl, { timeout: 200000 });
     }
 
 
